@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "bun run build",
+  "devCommand": "bun run dev",
+  "installCommand": "bun install",
+  "regions": ["iad1"],
+  "env": {
+    "GOOGLE_CLIENT_ID": {
+      "description": "Google OAuth Client ID for Gemini CLI authentication. Get from https://console.cloud.google.com/apis/credentials",
+      "value": ""
+    },
+    "GOOGLE_CLIENT_SECRET": {
+      "description": "Google OAuth Client Secret for Gemini CLI authentication",
+      "value": ""
+    },
+    "GEMINI_REDIRECT_URI": {
+      "description": "OAuth redirect URI. Must match what's configured in Google Cloud Console. Format: https://your-domain.com/api/auth/gemini/callback",
+      "value": ""
+    },
+    "GEMINI_API_KEY": {
+      "description": "Google Gemini API key (fallback if OAuth not configured). Get from https://aistudio.google.com/apikey",
+      "value": ""
+    }
+  }
+}
