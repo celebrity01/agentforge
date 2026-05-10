@@ -2,7 +2,7 @@
 
 import { AGENTS, type AgentId } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Check, Brain } from "lucide-react";
+import { Check, Zap } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
 interface AgentCardProps {
@@ -13,10 +13,8 @@ interface AgentCardProps {
 
 export function AgentCard({ agentId, isSelected, onSelect }: AgentCardProps) {
   const agent = AGENTS.find((a) => a.id === agentId);
-  const geminiAuth = useAppStore((s) => s.geminiAuth);
+  const isGeminiConnected = useAppStore((s) => s.isGeminiConnected);
   if (!agent) return null;
-
-  const needsAuth = agent.requiresAuth && !geminiAuth.isAuthenticated;
 
   return (
     <button
@@ -37,9 +35,9 @@ export function AgentCard({ agentId, isSelected, onSelect }: AgentCardProps) {
           )}
         >
           {agent.icon}
-          {geminiAuth.isAuthenticated && (
-            <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-violet-500 text-white">
-              <Brain className="size-2.5" />
+          {isGeminiConnected && (
+            <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+              <Zap className="size-2.5" />
             </div>
           )}
         </div>
@@ -53,18 +51,13 @@ export function AgentCard({ agentId, isSelected, onSelect }: AgentCardProps) {
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
             {agent.description}
           </p>
-          {geminiAuth.isAuthenticated && agentId === "openmanus" && (
+          {isGeminiConnected && (
             <div className="flex items-center gap-1 mt-1">
-              <Brain className="size-2.5 text-violet-500" />
-              <span className="text-[10px] text-violet-500 font-medium">
-                Gemini-powered brain
+              <Zap className="size-2.5 text-emerald-500" />
+              <span className="text-[10px] text-emerald-500 font-medium">
+                Gemini-powered
               </span>
             </div>
-          )}
-          {needsAuth && (
-            <p className="text-[10px] text-amber-500 mt-1">
-              Sign in with Google to connect
-            </p>
           )}
         </div>
       </div>

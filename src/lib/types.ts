@@ -26,7 +26,6 @@ export interface Agent {
   color: string;
   bgColor: string;
   borderColor: string;
-  requiresAuth: boolean;
 }
 
 export interface Conversation {
@@ -40,19 +39,8 @@ export interface Conversation {
 
 export interface Settings {
   geminiApiKey: string;
-  openaiApiKey: string;
   model: string;
   theme: "light" | "dark" | "system";
-}
-
-export interface GeminiAuthState {
-  isAuthenticated: boolean;
-  accessToken: string | null;
-  refreshToken: string | null;
-  expiresAt: number | null;
-  userEmail: string | null;
-  userAvatar: string | null;
-  userName: string | null;
 }
 
 export const AGENTS: Agent[] = [
@@ -60,7 +48,7 @@ export const AGENTS: Agent[] = [
     id: "openmanus",
     name: "OpenManus",
     description:
-      "Multi-agent autonomous task executor powered by Gemini. Plans, codes, and deploys complex workflows with tool-using capabilities — using Gemini as its brain.",
+      "Multi-agent autonomous task executor powered by Gemini. Plans, codes, and deploys complex workflows with tool-using capabilities.",
     capabilities: [
       "Autonomous Task Planning",
       "Code Generation & Execution",
@@ -73,7 +61,6 @@ export const AGENTS: Agent[] = [
     color: "text-amber-500",
     bgColor: "bg-amber-500/10",
     borderColor: "border-amber-500/30",
-    requiresAuth: true,
   },
   {
     id: "gemini",
@@ -92,6 +79,5 @@ export const AGENTS: Agent[] = [
     color: "text-violet-500",
     bgColor: "bg-violet-500/10",
     borderColor: "border-violet-500/30",
-    requiresAuth: true,
   },
 ];

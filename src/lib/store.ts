@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AgentId, Message, Conversation, Settings, GeminiAuthState } from "./types";
+import type { AgentId, Message, Conversation, Settings } from "./types";
 
 interface AppState {
   // Agent
@@ -36,52 +36,32 @@ interface AppState {
   settingsOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
 
-  // Gemini Auth
-  geminiAuth: GeminiAuthState;
-  setGeminiAuth: (auth: Partial<GeminiAuthState>) => void;
-  clearGeminiAuth: () => void;
+  // Gemini API Key
+  geminiApiKey: string;
+  setGeminiApiKey: (key: string) => void;
+  isGeminiConnected: boolean;
+  setIsGeminiConnected: (connected: boolean) => void;
 }
 
-const initialGeminiAuth: GeminiAuthState = {
-  isAuthenticated: false,
-  accessToken: null,
-  refreshToken: null,
-  expiresAt: null,
-  userEmail: null,
-  userAvatar: null,
-  userName: null,
-};
-
-// Try to load persisted auth from localStorage on client
-function getInitialAuth(): GeminiAuthState {
-  if (typeof window === "undefined") return initialGeminiAuth;
+function getStoredApiKey(): string {
+  if (typeof window === "undefined") return "";
   try {
-    const stored = localStorage.getItem("agentforge-gemini-auth");
-    if (stored) {
-      const parsed = JSON.parse(stored) as GeminiAuthState;
-      // Check if token is expired
-      if (parsed.expiresAt && parsed.expiresAt > Date.now()) {
-        return parsed;
-      }
-      // Token expired, clear it
-      localStorage.removeItem("agentforge-gemini-auth");
-    }
+    return localStorage.getItem("agentforge-gemini-api-key") || "";
   } catch {
-    // Ignore parse errors
+    return "";
   }
-  return initialGeminiAuth;
 }
 
-function persistAuth(auth: GeminiAuthState) {
+function persistApiKey(key: string) {
   if (typeof window === "undefined") return;
   try {
-    if (auth.isAuthenticated) {
-      localStorage.setItem("agentforge-gemini-auth", JSON.stringify(auth));
+    if (key) {
+      localStorage.setItem("agentforge-gemini-api-key", key);
     } else {
-      localStorage.removeItem("agentforge-gemini-auth");
+      localStorage.removeItem("agentforge-gemini-api-key");
     }
   } catch {
-    // Ignore storage errors
+    // Ignore
   }
 }
 
@@ -128,7 +108,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Settings
   settings: {
     geminiApiKey: "",
-    openaiApiKey: "",
     model: "gemini-2.5-pro",
     theme: "dark",
   },
@@ -145,15 +124,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   settingsOpen: false,
   setSettingsOpen: (open) => set({ settingsOpen: open }),
 
-  // Gemini Auth
-  geminiAuth: getInitialAuth(),
-  setGeminiAuth: (authUpdate) => {
-    const newAuth = { ...get().geminiAuth, ...authUpdate };
-    persistAuth(newAuth);
-    set({ geminiAuth: newAuth });
+  // Gemini API Key
+  geminiApiKey: getStoredApiKey(),
+  setGeminiApiKey: (key) => {
+    persistApiKey(key);
+    set({ geminiApiKey: key, isGeminiConnected: !!key });
   },
-  clearGeminiAuth: () => {
-    persistAuth(initialGeminiAuth);
-    set({ geminiAuth: initialGeminiAuth });
-  },
+  isGeminiConnected: !!getStoredApiKey(),
+  setIsGeminiConnected: (connected) => set({ isGeminiConnected: connected }),
 }));

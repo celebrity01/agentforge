@@ -14,6 +14,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AgentCard } from "@/components/agent/agent-card";
 import { useAppStore } from "@/lib/store";
 import { AGENTS, type AgentId, type Conversation } from "@/lib/types";
@@ -24,14 +25,16 @@ import {
   Sun,
   Trash2,
   MessageSquare,
-  LogOut,
-  User,
-  Crown,
-  Brain,
+  Key,
+  Check,
+  X,
+  Eye,
+  EyeOff,
+  ExternalLink,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { format } from "date-fns";
-import { useSyncExternalStore, useCallback } from "react";
+import { useSyncExternalStore, useCallback, useState } from "react";
 
 export function AppSidebar() {
   const {
@@ -44,8 +47,10 @@ export function AppSidebar() {
     addConversation,
     deleteConversation,
     setSettingsOpen,
-    geminiAuth,
-    clearGeminiAuth,
+    geminiApiKey,
+    setGeminiApiKey,
+    isGeminiConnected,
+    setIsGeminiConnected,
   } = useAppStore();
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
@@ -53,6 +58,10 @@ export function AppSidebar() {
     () => true,
     () => false
   );
+
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [tempKey, setTempKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
 
   const handleNewChat = () => {
     clearMessages();
@@ -68,24 +77,34 @@ export function AppSidebar() {
     handleNewChat();
   };
 
-  const handleGeminiLogin = useCallback(() => {
-    // Open OAuth flow in a popup window — uses Gemini CLI's built-in
-    // Google OAuth client, same as running `gemini` and choosing "Login with Google"
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
+  const handleConnectKey = useCallback(async () => {
+    if (!tempKey.trim()) return;
 
-    window.open(
-      "/api/auth/gemini",
-      "gemini-oauth",
-      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,location=yes,status=no`
-    );
-  }, []);
+    // Validate the key by making a small test request
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${tempKey.trim()}`
+      );
+      if (res.ok) {
+        setGeminiApiKey(tempKey.trim());
+        setIsGeminiConnected(true);
+        setShowKeyInput(false);
+        setTempKey("");
+      } else {
+        const err = await res.json();
+        alert(
+          "Invalid API key: " + (err?.error?.message || "Please check your key")
+        );
+      }
+    } catch {
+      alert("Network error. Please try again.");
+    }
+  }, [tempKey, setGeminiApiKey, setIsGeminiConnected]);
 
-  const handleGeminiLogout = useCallback(() => {
-    clearGeminiAuth();
-  }, [clearGeminiAuth]);
+  const handleDisconnect = useCallback(() => {
+    setGeminiApiKey("");
+    setIsGeminiConnected(false);
+  }, [setGeminiApiKey, setIsGeminiConnected]);
 
   return (
     <Sidebar variant="sidebar" collapsible="offcanvas">
@@ -106,82 +125,119 @@ export function AppSidebar() {
       <SidebarSeparator />
 
       <SidebarContent>
-        {/* Gemini Connection Section */}
+        {/* Gemini API Key Section */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs text-muted-foreground flex items-center gap-1">
-            <Brain className="size-3" /> Gemini Connection
+            <Key className="size-3" /> Gemini API
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            {geminiAuth.isAuthenticated ? (
+            {isGeminiConnected ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2.5">
-                  {geminiAuth.userAvatar ? (
-                    <img
-                      src={geminiAuth.userAvatar}
-                      alt=""
-                      className="size-8 rounded-full"
-                    />
-                  ) : (
-                    <div className="flex size-8 items-center justify-center rounded-full bg-emerald-500/10">
-                      <User className="size-4 text-emerald-500" />
-                    </div>
-                  )}
+                  <div className="flex size-8 items-center justify-center rounded-full bg-emerald-500/10">
+                    <Check className="size-4 text-emerald-500" />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">
-                      {geminiAuth.userName || "Authenticated"}
+                    <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      Gemini Connected
                     </p>
-                    <p className="text-[10px] text-muted-foreground truncate">
-                      {geminiAuth.userEmail || "Gemini connected"}
+                    <p className="text-[10px] text-muted-foreground font-mono truncate">
+                      {geminiApiKey.slice(0, 8)}...{geminiApiKey.slice(-4)}
                     </p>
                   </div>
                   <div className="size-2 rounded-full bg-emerald-500 shrink-0" />
                 </div>
-                <div className="flex items-center gap-1.5 px-1">
-                  <Crown className="size-3 text-amber-500" />
-                  <span className="text-[10px] text-muted-foreground">
-                    Pro sub? You get 1,500 req/day. Free tier: 1,000 req/day.
-                  </span>
-                </div>
                 <p className="text-[10px] text-muted-foreground px-1">
-                  Both agents use Gemini as their brain via your Google account
-                  — same login as Gemini CLI.
+                  Both agents use Gemini as their brain via your API key.
+                  {geminiApiKey ? " Pro subscribers get higher rate limits." : ""}
                 </p>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="w-full gap-2 text-xs text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                  onClick={handleGeminiLogout}
+                  onClick={handleDisconnect}
                 >
-                  <LogOut className="size-3.5" />
+                  <X className="size-3.5" />
                   Disconnect
                 </Button>
               </div>
             ) : (
               <div className="space-y-2">
                 <p className="text-[10px] text-muted-foreground px-1">
-                  Sign in with the same Google account you use for Gemini CLI.
-                  Uses the official Gemini OAuth flow — your Pro subscription
-                  gives you higher limits automatically.
+                  Enter your Gemini API key to power both agents. Get a free key
+                  at Google AI Studio.
                 </p>
-                <Button
-                  className="w-full gap-2 bg-white text-gray-800 hover:bg-gray-100 border border-gray-300 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:border-white/20"
-                  size="sm"
-                  onClick={handleGeminiLogin}
-                >
-                  <svg className="size-4" viewBox="0 0 24 24">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                  </svg>
-                  Sign in with Google
-                </Button>
-                <div className="flex items-center gap-1.5 px-1">
-                  <Crown className="size-3 text-amber-500" />
-                  <span className="text-[10px] text-amber-600 dark:text-amber-400">
-                    Gemini Pro subscribers get 1,500 req/day
-                  </span>
-                </div>
+                {showKeyInput ? (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Input
+                        type={showKey ? "text" : "password"}
+                        placeholder="AIzaSy..."
+                        value={tempKey}
+                        onChange={(e) => setTempKey(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleConnectKey();
+                        }}
+                        className="text-xs pr-8 h-8"
+                        autoFocus
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 size-8"
+                        onClick={() => setShowKey(!showKey)}
+                      >
+                        {showKey ? (
+                          <EyeOff className="size-3" />
+                        ) : (
+                          <Eye className="size-3" />
+                        )}
+                      </Button>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button
+                        size="sm"
+                        className="flex-1 gap-1 text-xs bg-emerald-600 hover:bg-emerald-700"
+                        onClick={handleConnectKey}
+                        disabled={!tempKey.trim()}
+                      >
+                        <Check className="size-3" />
+                        Connect
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => {
+                          setShowKeyInput(false);
+                          setTempKey("");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Button
+                      className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                      size="sm"
+                      onClick={() => setShowKeyInput(true)}
+                    >
+                      <Key className="size-3.5" />
+                      Enter API Key
+                    </Button>
+                    <a
+                      href="https://aistudio.google.com/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-1 text-[10px] text-violet-600 dark:text-violet-400 hover:underline"
+                    >
+                      <ExternalLink className="size-3" />
+                      Get free API key from Google AI Studio
+                    </a>
+                  </>
+                )}
               </div>
             )}
           </SidebarGroupContent>

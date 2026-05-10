@@ -6,10 +6,10 @@ import { TypingIndicator } from "../common/typing-indicator";
 import { useAppStore } from "@/lib/store";
 import { AGENTS } from "@/lib/types";
 import { motion } from "framer-motion";
-import { Sparkles, Brain } from "lucide-react";
+import { Sparkles, Zap, Key } from "lucide-react";
 
 export function ChatInterface() {
-  const { messages, isLoading, currentAgent, geminiAuth } = useAppStore();
+  const { messages, isLoading, currentAgent, isGeminiConnected } = useAppStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const agent = AGENTS.find((a) => a.id === currentAgent);
 
@@ -51,28 +51,30 @@ export function ChatInterface() {
             </span>{" "}
             to get started.
           </motion.p>
-          {geminiAuth.isAuthenticated && (
+          {isGeminiConnected ? (
             <motion.div
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.25, duration: 0.5 }}
               className="flex items-center justify-center gap-1.5 mb-6"
             >
-              <Brain className="size-3.5 text-violet-500" />
-              <span className="text-xs text-violet-500 font-medium">
-                Powered by Gemini via your Google account
+              <Zap className="size-3.5 text-emerald-500" />
+              <span className="text-xs text-emerald-500 font-medium">
+                Powered by Gemini API
               </span>
             </motion.div>
-          )}
-          {!geminiAuth.isAuthenticated && (
-            <motion.p
+          ) : (
+            <motion.div
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.25, duration: 0.5 }}
-              className="text-xs text-muted-foreground mb-6"
+              className="flex items-center justify-center gap-1.5 mb-6"
             >
-              Sign in with Google in the sidebar to connect Gemini as the brain for both agents.
-            </motion.p>
+              <Key className="size-3.5 text-amber-500" />
+              <span className="text-xs text-amber-500 font-medium">
+                Enter your Gemini API key in the sidebar to get started
+              </span>
+            </motion.div>
           )}
           <motion.div
             initial={{ y: 10, opacity: 0 }}

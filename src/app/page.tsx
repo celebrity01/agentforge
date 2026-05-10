@@ -7,7 +7,7 @@ import { MessageInput } from "@/components/chat/message-input";
 import { SettingsPanel } from "@/components/settings/settings-panel";
 import { useAppStore } from "@/lib/store";
 import { AGENTS, type Message } from "@/lib/types";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 export default function Home() {
@@ -21,97 +21,19 @@ export default function Home() {
     currentConversationId,
     addConversation,
     updateConversation,
-    geminiAuth,
-    setGeminiAuth,
-    clearGeminiAuth,
+    geminiApiKey,
+    isGeminiConnected,
   } = useAppStore();
 
   const agent = AGENTS.find((a) => a.id === currentAgent);
 
-  // Listen for OAuth callback messages from the popup window
-  useEffect(() => {
-    function handleMessage(event: MessageEvent) {
-      if (event.data?.type === "gemini-auth-success") {
-        setGeminiAuth({
-          isAuthenticated: true,
-          accessToken: event.data.accessToken,
-          refreshToken: event.data.refreshToken,
-          expiresAt: event.data.expiresAt,
-          userEmail: event.data.userEmail,
-          userName: event.data.userName,
-          userAvatar: event.data.userAvatar,
-        });
-      } else if (event.data?.type === "gemini-auth-error") {
-        console.error("Gemini auth error:", event.data.error);
-      }
-    }
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [setGeminiAuth]);
-
-  // Auto-refresh token before it expires
-  useEffect(() => {
-    if (!geminiAuth.isAuthenticated || !geminiAuth.refreshToken || !geminiAuth.expiresAt) {
-      return;
-    }
-
-    // Refresh 5 minutes before expiry
-    const refreshTime = geminiAuth.expiresAt - 5 * 60 * 1000;
-    const now = Date.now();
-
-    if (refreshTime <= now) {
-      // Token needs immediate refresh
-      refreshAuthToken(geminiAuth.refreshToken);
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      refreshAuthToken(geminiAuth.refreshToken!);
-    }, refreshTime - now);
-
-    return () => clearTimeout(timeout);
-  }, [geminiAuth.isAuthenticated, geminiAuth.refreshToken, geminiAuth.expiresAt, setGeminiAuth]);
-
-  async function refreshAuthToken(refreshToken: string) {
-    try {
-      const res = await fetch("/api/auth/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setGeminiAuth({
-          accessToken: data.accessToken,
-          expiresAt: data.expiresAt,
-        });
-      } else {
-        // Refresh failed, clear auth
-        clearGeminiAuth();
-      }
-    } catch {
-      // Network error, don't clear auth — might be temporary
-    }
-  }
-
-  // Check auth status on mount
-  useEffect(() => {
-    // Check if stored auth is still valid
-    if (geminiAuth.isAuthenticated && geminiAuth.expiresAt) {
-      if (geminiAuth.expiresAt <= Date.now()) {
-        // Token expired, try to refresh
-        if (geminiAuth.refreshToken) {
-          refreshAuthToken(geminiAuth.refreshToken);
-        } else {
-          clearGeminiAuth();
-        }
-      }
-    }
-  }, [geminiAuth.isAuthenticated, geminiAuth.expiresAt, geminiAuth.refreshToken, clearGeminiAuth, setGeminiAuth]);
-
   const handleSend = useCallback(
     async (content: string) => {
+      if (!isGeminiConnected) {
+        alert("Please connect your Gemini API key first. Click 'Enter API Key' in the sidebar.");
+        return;
+      }
+
       const userMessage: Message = {
         id: uuidv4(),
         role: "user",
@@ -165,14 +87,13 @@ export default function Home() {
           body: JSON.stringify({
             messages: chatMessages,
             agent: currentAgent,
-            geminiAccessToken: geminiAuth.isAuthenticated
-              ? geminiAuth.accessToken
-              : undefined,
+            geminiApiKey: geminiApiKey || undefined,
           }),
         });
 
         if (!response.ok) {
-          throw new Error("Failed to send message");
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to send message");
         }
 
         const reader = response.body?.getReader();
@@ -218,7 +139,7 @@ export default function Home() {
           }
         }
 
-        // Final update to ensure content is set
+        // Final update
         if (!accumulatedContent) {
           updateMessage(assistantMessageId, {
             content:
@@ -229,7 +150,9 @@ export default function Home() {
         console.error("Failed to send message:", error);
         updateMessage(assistantMessageId, {
           content:
-            "I'm sorry, I encountered an error while processing your request. Please check your connection and try again.",
+            error instanceof Error
+              ? `Error: ${error.message}`
+              : "I'm sorry, I encountered an error. Please check your API key and try again.",
         });
       } finally {
         setIsLoading(false);
@@ -244,8 +167,8 @@ export default function Home() {
       setIsLoading,
       addConversation,
       updateConversation,
-      geminiAuth.isAuthenticated,
-      geminiAuth.accessToken,
+      geminiApiKey,
+      isGeminiConnected,
     ]
   );
 
@@ -266,39 +189,29 @@ export default function Home() {
                 <p className="text-[10px] text-muted-foreground mt-0.5">
                   {isLoading
                     ? "Thinking..."
-                    : geminiAuth.isAuthenticated
-                      ? `Gemini connected · ${geminiAuth.userEmail || "Authenticated"}`
-                      : "Ready"}
+                    : isGeminiConnected
+                      ? "Gemini connected"
+                      : "No API key"}
                 </p>
               </div>
             </div>
-            {/* Auth status indicator */}
-            {geminiAuth.isAuthenticated && (
+            {/* Connection status */}
+            {isGeminiConnected && (
               <div className="ml-auto flex items-center gap-2">
                 <div className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1">
-                  <div className="size-1.5 rounded-full bg-emerald-500" />
+                  <div className={`size-1.5 rounded-full ${isLoading ? "animate-pulse" : ""} bg-emerald-500`} />
                   <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                    Gemini Connected
+                    {isLoading ? "Streaming" : "Gemini Live"}
                   </span>
                 </div>
               </div>
             )}
-            {isLoading && !geminiAuth.isAuthenticated && (
+            {!isGeminiConnected && (
               <div className="ml-auto flex items-center gap-2">
                 <div className="flex items-center gap-1 rounded-full bg-amber-500/10 px-3 py-1">
-                  <div className="size-1.5 animate-pulse rounded-full bg-amber-500" />
+                  <div className="size-1.5 rounded-full bg-amber-500" />
                   <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                    Streaming
-                  </span>
-                </div>
-              </div>
-            )}
-            {isLoading && geminiAuth.isAuthenticated && (
-              <div className="ml-auto flex items-center gap-2">
-                <div className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1">
-                  <div className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
-                  <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                    Streaming
+                    API Key Required
                   </span>
                 </div>
               </div>
@@ -309,7 +222,7 @@ export default function Home() {
           <ChatInterface />
 
           {/* Input */}
-          <MessageInput onSend={handleSend} disabled={isLoading} />
+          <MessageInput onSend={handleSend} disabled={isLoading || !isGeminiConnected} />
         </div>
       </SidebarInset>
 
