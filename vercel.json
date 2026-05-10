@@ -4,11 +4,5 @@
   "buildCommand": "bun run build",
   "devCommand": "bun run dev",
   "installCommand": "bun install",
-  "regions": ["iad1"],
-  "env": {
-    "GEMINI_REDIRECT_URI": {
-      "description": "OAuth redirect URI for Google login. Set to https://your-domain.vercel.app/api/auth/gemini/callback",
-      "value": ""
-    }
-  }
+  "regions": ["iad1"]
 }
