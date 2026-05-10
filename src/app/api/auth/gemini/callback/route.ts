@@ -4,24 +4,6 @@ import { getOAuthConfig } from "@/lib/oauth-config";
 export async function GET(request: NextRequest) {
   const config = getOAuthConfig(request);
 
-  if (!config) {
-    const html = `
-<!DOCTYPE html>
-<html>
-<head><title>Auth Failed</title></head>
-<body>
-<script>
-  window.opener?.postMessage({ type: 'gemini-auth-error', error: 'OAuth not configured on server' }, '*');
-  window.close();
-</script>
-<p>Server OAuth not configured. You can close this window.</p>
-</body>
-</html>`;
-    return new NextResponse(html, {
-      headers: { "Content-Type": "text/html" },
-    });
-  }
-
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get("code");
   const state = searchParams.get("state");

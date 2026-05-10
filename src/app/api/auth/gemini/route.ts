@@ -4,13 +4,13 @@ import { getOAuthConfig } from "@/lib/oauth-config";
 export async function GET(request: NextRequest) {
   const config = getOAuthConfig(request);
 
-  if (!config) {
+  if (!config.redirectUri) {
     return NextResponse.json(
       {
-        error: "OAuth not configured",
+        error: "Redirect URI not configured",
         message:
-          "Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables. " +
-          "See .env.example for instructions.",
+          "Set GEMINI_REDIRECT_URI environment variable to your callback URL, " +
+          "e.g. https://your-domain.vercel.app/api/auth/gemini/callback",
       },
       { status: 500 }
     );

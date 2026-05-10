@@ -4,13 +4,6 @@ import { getOAuthConfig } from "@/lib/oauth-config";
 export async function POST(request: NextRequest) {
   const config = getOAuthConfig();
 
-  if (!config) {
-    return NextResponse.json(
-      { error: "OAuth not configured on server" },
-      { status: 500 }
-    );
-  }
-
   try {
     const body = await request.json();
     const { refreshToken } = body as { refreshToken: string };
