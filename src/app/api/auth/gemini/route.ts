@@ -24,6 +24,9 @@ export async function GET(request: NextRequest) {
         message:
           "Set GEMINI_REDIRECT_URI environment variable to your callback URL, " +
           "e.g. https://your-domain.vercel.app/api/auth/gemini/callback",
+        detectedHost: request.headers.get("host"),
+        detectedOrigin: request.headers.get("origin"),
+        suggestion: `https://${request.headers.get("host")}/api/auth/gemini/callback`,
       },
       { status: 500 }
     );
