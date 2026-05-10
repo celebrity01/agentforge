@@ -4,6 +4,19 @@ import { getOAuthConfig } from "@/lib/oauth-config";
 export async function GET(request: NextRequest) {
   const config = getOAuthConfig(request);
 
+  if (!config) {
+    return NextResponse.json(
+      {
+        error: "OAuth not configured",
+        message:
+          "Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables. " +
+          "Create credentials at https://console.cloud.google.com/apis/credentials " +
+          "(use Web application type, add your redirect URI).",
+      },
+      { status: 500 }
+    );
+  }
+
   if (!config.redirectUri) {
     return NextResponse.json(
       {

@@ -3,32 +3,29 @@ import { NextRequest } from "next/server";
 /**
  * OAuth configuration for Gemini CLI integration.
  *
- * Uses the Gemini CLI's built-in OAuth client by default — the same credentials
- * the official Gemini CLI uses when you choose "Login with Google".
- * This works with Google AI Pro / Gemini Pro subscriptions out of the box.
+ * For WEB DEPLOYMENT (Vercel, etc.):
+ *   You MUST create your own Google OAuth 2.0 credentials and set:
+ *     - GOOGLE_CLIENT_ID (required)
+ *     - GOOGLE_CLIENT_SECRET (required)
+ *     - GEMINI_REDIRECT_URI (required - e.g. https://your-app.vercel.app/api/auth/gemini/callback)
  *
- * You can override with your own credentials via environment variables:
- *   - GOOGLE_CLIENT_ID (optional, overrides default)
- *   - GOOGLE_CLIENT_SECRET (optional, overrides default)
- *   - GEMINI_REDIRECT_URI (optional, auto-detected from request origin)
+ *   The Gemini CLI's built-in client only works with localhost redirects,
+ *   so it cannot be used for web deployments.
  *
- * No Google Cloud Console setup is required for the default flow.
+ * For LOCAL DEVELOPMENT:
+ *   Works automatically using the Gemini CLI's built-in OAuth client
+ *   with http://localhost redirect.
+ *
+ * Setup instructions:
+ *   1. Go to https://console.cloud.google.com/apis/credentials
+ *   2. Create a project (or use existing)
+ *   3. Click "Create Credentials" → "OAuth client ID"
+ *   4. Select "Web application" as the application type
+ *   5. Add Authorized redirect URI: https://your-app.vercel.app/api/auth/gemini/callback
+ *   6. Copy the Client ID and Client Secret
+ *   7. Enable "Generative Language API" at https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com
+ *   8. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GEMINI_REDIRECT_URI env vars
  */
-
-// Default Gemini CLI OAuth client — safe for installed/desktop apps per Google's policy.
-// Encoded to avoid false-positive secret scanning. These are public client credentials
-// shipped in the open-source Gemini CLI (github.com/google-gemini/gemini-cli).
-function getDefaultClientId(): string {
-  // Format: {project_number}-{client_id}.apps.googleusercontent.com
-  const projectNum = "681255809395";
-  const clientId = "oo8ft2oprdrnp9e3aqf6av3hmdib135j";
-  const suffix = "apps.googleusercontent.com";
-  return `${projectNum}-${clientId}.${suffix}`;
-}
-
-function getDefaultClientSecret(): string {
-  return "GOCSPX-" + "4uHgMPm-1o7Sk-geV6Cu5clXFsxl";
-}
 
 const SCOPES = [
   "https://www.googleapis.com/auth/cloud-platform",
@@ -37,10 +34,12 @@ const SCOPES = [
 ].join(" ");
 
 function getOAuthConfig(request?: NextRequest) {
-  // Use env vars if provided, otherwise fall back to Gemini CLI defaults
-  const clientId = process.env.GOOGLE_CLIENT_ID || getDefaultClientId();
-  const clientSecret =
-    process.env.GOOGLE_CLIENT_SECRET || getDefaultClientSecret();
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    return null;
+  }
 
   // Determine redirect URI
   let redirectUri = process.env.GEMINI_REDIRECT_URI || "";
