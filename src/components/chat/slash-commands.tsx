@@ -9,6 +9,11 @@ import {
   FileText,
   Terminal,
   Sparkles,
+  Columns,
+  Brain,
+  BookMarked,
+  Zap,
+  Layout,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -84,6 +89,46 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     label: "Export Chat",
     description: "Download conversation as markdown",
     icon: <Download className="size-3.5 text-teal-500" />,
+    agent: "both",
+  },
+  {
+    id: "templates",
+    command: "/templates",
+    label: "Quick Templates",
+    description: "Pre-built prompts for common tasks",
+    icon: <Layout className="size-3.5 text-violet-500" />,
+    agent: "both",
+  },
+  {
+    id: "snippets",
+    command: "/snippets",
+    label: "Snippet Library",
+    description: "Browse saved code snippets",
+    icon: <BookMarked className="size-3.5 text-emerald-500" />,
+    agent: "both",
+  },
+  {
+    id: "memory",
+    command: "/memory",
+    label: "Agent Memory",
+    description: "Manage what the agent remembers",
+    icon: <Brain className="size-3.5 text-pink-500" />,
+    agent: "both",
+  },
+  {
+    id: "split",
+    command: "/split",
+    label: "Split View",
+    description: "Chat with both agents side by side",
+    icon: <Columns className="size-3.5 text-blue-500" />,
+    agent: "both",
+  },
+  {
+    id: "palette",
+    command: "/palette",
+    label: "Command Palette",
+    description: "Open the command palette (Cmd+K)",
+    icon: <Zap className="size-3.5 text-amber-500" />,
     agent: "both",
   },
 ];

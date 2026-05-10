@@ -7,7 +7,45 @@ import { CodePreview } from "../preview/code-preview";
 import { useAppStore } from "@/lib/store";
 import { AGENTS } from "@/lib/types";
 import { motion } from "framer-motion";
-import { Sparkles, Zap, Key, Search, Code, Image, Terminal, FileText } from "lucide-react";
+import { Sparkles, Zap, Key, Search, Code, Image, Terminal, FileText, Wrench, Brain } from "lucide-react";
+
+// Thinking visualization for OpenManus
+function ThinkingVisualization() {
+  const steps = [
+    { icon: <Brain className="size-3.5" />, label: "Analyzing", delay: 0 },
+    { icon: <Wrench className="size-3.5" />, label: "Selecting tools", delay: 0.5 },
+    { icon: <Search className="size-3.5" />, label: "Gathering data", delay: 1 },
+    { icon: <Code className="size-3.5" />, label: "Processing", delay: 1.5 },
+    { icon: <Sparkles className="size-3.5" />, label: "Synthesizing", delay: 2 },
+  ];
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-sm">
+        🔧
+      </div>
+      <div className="rounded-2xl bg-card border border-border px-4 py-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          {steps.map((step, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: step.delay, repeat: Infinity, repeatDelay: 4, duration: 0.5 }}
+              className="flex items-center gap-1.5 text-muted-foreground"
+            >
+              {step.icon}
+              <span className="text-[10px] font-medium">{step.label}</span>
+              {i < steps.length - 1 && (
+                <span className="text-muted-foreground/30 mx-1">→</span>
+              )}
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ChatInterface() {
   const { messages, isLoading, currentAgent, isGeminiConnected, preview, closePreview } = useAppStore();
@@ -130,7 +168,7 @@ export function ChatInterface() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto scroll-smooth">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth">
       <div className="mx-auto max-w-3xl py-4">
         {messages.map((message, index) => (
           <motion.div
@@ -142,15 +180,16 @@ export function ChatInterface() {
             <MessageBubble message={message} />
           </motion.div>
         ))}
-        {isLoading && (
+        {isLoading && currentAgent === "openmanus" && (
+          <ThinkingVisualization />
+        )}
+        {isLoading && currentAgent !== "openmanus" && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-3 px-4 py-3"
           >
-            <div
-              className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-sm ${agent?.bgColor}`}
-            >
+            <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-sm ${agent?.bgColor}`}>
               {agent?.icon || "🤖"}
             </div>
             <div className="rounded-2xl bg-card border border-border px-4 py-2">
@@ -163,11 +202,7 @@ export function ChatInterface() {
       {/* Code Preview Overlay */}
       {preview.isOpen && (
         <div className="fixed bottom-20 right-4 z-40 w-[480px] max-w-[90vw]">
-          <CodePreview
-            code={preview.code}
-            language={preview.language}
-            onClose={closePreview}
-          />
+          <CodePreview code={preview.code} language={preview.language} onClose={closePreview} />
         </div>
       )}
     </div>

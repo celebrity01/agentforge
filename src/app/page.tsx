@@ -8,7 +8,13 @@ import { SettingsPanel } from "@/components/settings/settings-panel";
 import { useAppStore } from "@/lib/store";
 import { AGENTS, type Message, type ToolCall } from "@/lib/types";
 import { SLASH_COMMANDS, type SlashCommand } from "@/components/chat/slash-commands";
-import { useCallback, useRef } from "react";
+import { CommandPalette } from "@/components/command-palette/command-palette";
+import { TemplateModal } from "@/components/templates/template-modal";
+import { SnippetLibrary } from "@/components/snippet/snippet-library";
+import { MemoryPanel } from "@/components/memory/memory-panel";
+import { SplitView } from "@/components/split-view/split-view";
+import { useCallback, useRef, useState, useEffect } from "react";
+import type { PromptTemplate, Snippet as SnippetType } from "@/lib/types";
 import { v4 as uuidv4 } from "uuid";
 
 export default function Home() {
@@ -32,6 +38,23 @@ export default function Home() {
 
   // Ref for handleSend so slash commands can call it
   const handleSendRef = useRef<(content: string) => void>(() => {});
+
+  // Modal states
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [snippetOpen, setSnippetOpen] = useState(false);
+  const [memoryOpen, setMemoryOpen] = useState(false);
+
+  // Cmd+K shortcut for command palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        useAppStore.getState().setCommandPaletteOpen(!useAppStore.getState().commandPaletteOpen);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // ─── Export chat as markdown ─────────────────────────────────────────────
   const exportChat = useCallback(() => {
@@ -168,6 +191,21 @@ export default function Home() {
         case "export":
           exportChat();
           break;
+        case "templates":
+          setTemplateOpen(true);
+          break;
+        case "snippets":
+          setSnippetOpen(true);
+          break;
+        case "memory":
+          setMemoryOpen(true);
+          break;
+        case "split":
+          useAppStore.getState().setSplitView({ isOpen: true });
+          break;
+        case "palette":
+          useAppStore.getState().setCommandPaletteOpen(true);
+          break;
       }
     },
     [generateImage, exportChat, clearMessages, setCurrentConversationId]
@@ -229,7 +267,7 @@ export default function Home() {
           content: m.content,
         }));
 
-        const { settings } = useAppStore.getState();
+        const { settings, memories } = useAppStore.getState();
 
         const response = await fetch("/api/chat/stream", {
           method: "POST",
@@ -239,6 +277,7 @@ export default function Home() {
             agent: currentAgent,
             geminiApiKey: geminiApiKey || undefined,
             model: settings.model || undefined,
+            memories: memories.length > 0 ? memories.map((m) => ({ key: m.key, value: m.value })) : undefined,
           }),
         });
 
@@ -465,6 +504,37 @@ export default function Home() {
 
       {/* Settings Panel */}
       <SettingsPanel />
+
+      {/* Command Palette */}
+      <CommandPalette />
+
+      {/* Template Modal */}
+      {templateOpen && (
+        <TemplateModal
+          onSelect={(template) => {
+            handleSendRef.current(template.prompt);
+          }}
+          onClose={() => setTemplateOpen(false)}
+        />
+      )}
+
+      {/* Snippet Library */}
+      {snippetOpen && (
+        <SnippetLibrary
+          onClose={() => setSnippetOpen(false)}
+          onUseSnippet={(snippet) => {
+            handleSendRef.current(
+              `Here is a saved snippet in ${snippet.language}:\n\n\`\`\`${snippet.language}\n${snippet.code}\n\`\`\`\n\nPlease review and improve it.`
+            );
+          }}
+        />
+      )}
+
+      {/* Memory Panel */}
+      {memoryOpen && <MemoryPanel onClose={() => setMemoryOpen(false)} />}
+
+      {/* Split View */}
+      <SplitView />
     </SidebarProvider>
   );
 }

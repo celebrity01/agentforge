@@ -1,10 +1,18 @@
 import { create } from "zustand";
-import type { AgentId, Message, Conversation, Settings } from "./types";
+import type { AgentId, Message, Conversation, Settings, Snippet, MemoryEntry, ReactionType } from "./types";
 
 interface PreviewState {
   code: string;
   language: string;
   isOpen: boolean;
+}
+
+interface SplitViewState {
+  isOpen: boolean;
+  leftAgent: AgentId;
+  rightAgent: AgentId;
+  leftMessages: Message[];
+  rightMessages: Message[];
 }
 
 interface AppState {
@@ -52,25 +60,55 @@ interface AppState {
   preview: PreviewState;
   openPreview: (code: string, language: string) => void;
   closePreview: () => void;
+
+  // Command Palette
+  commandPaletteOpen: boolean;
+  setCommandPaletteOpen: (open: boolean) => void;
+
+  // Snippet Library
+  snippets: Snippet[];
+  addSnippet: (snippet: Snippet) => void;
+  removeSnippet: (id: string) => void;
+  togglePinSnippet: (id: string) => void;
+
+  // Agent Memory
+  memories: MemoryEntry[];
+  addMemory: (entry: MemoryEntry) => void;
+  removeMemory: (id: string) => void;
+  clearMemories: () => void;
+
+  // Reaction on message
+  setReaction: (messageId: string, reaction: ReactionType) => void;
+
+  // Split View
+  splitView: SplitViewState;
+  setSplitView: (update: Partial<SplitViewState>) => void;
+  addSplitMessage: (side: "left" | "right", message: Message) => void;
+
+  // Voice
+  isSpeaking: boolean;
+  setIsSpeaking: (speaking: boolean) => void;
+
+  // Fork
+  forkFromMessage: (messageId: string) => void;
+  activeForkId: string | null;
+  setActiveForkId: (id: string | null) => void;
 }
 
-function getStoredApiKey(): string {
-  if (typeof window === "undefined") return "";
+function getStored<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
   try {
-    return localStorage.getItem("agentforge-gemini-api-key") || "";
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
-    return "";
+    return fallback;
   }
 }
 
-function persistApiKey(key: string) {
+function persist<T>(key: string, value: T) {
   if (typeof window === "undefined") return;
   try {
-    if (key) {
-      localStorage.setItem("agentforge-gemini-api-key", key);
-    } else {
-      localStorage.removeItem("agentforge-gemini-api-key");
-    }
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // Ignore
   }
@@ -136,12 +174,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSettingsOpen: (open) => set({ settingsOpen: open }),
 
   // Gemini API Key
-  geminiApiKey: getStoredApiKey(),
+  geminiApiKey: getStored("agentforge-api-key", ""),
   setGeminiApiKey: (key) => {
-    persistApiKey(key);
+    persist("agentforge-api-key", key);
     set({ geminiApiKey: key, isGeminiConnected: !!key });
   },
-  isGeminiConnected: !!getStoredApiKey(),
+  isGeminiConnected: !!getStored("agentforge-api-key", ""),
   setIsGeminiConnected: (connected) => set({ isGeminiConnected: connected }),
 
   // Code Preview
@@ -150,4 +188,103 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ preview: { code, language, isOpen: true } }),
   closePreview: () =>
     set({ preview: { code: "", language: "", isOpen: false } }),
+
+  // Command Palette
+  commandPaletteOpen: false,
+  setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+
+  // Snippet Library
+  snippets: getStored("agentforge-snippets", []),
+  addSnippet: (snippet) =>
+    set((state) => {
+      const updated = [snippet, ...state.snippets];
+      persist("agentforge-snippets", updated);
+      return { snippets: updated };
+    }),
+  removeSnippet: (id) =>
+    set((state) => {
+      const updated = state.snippets.filter((s) => s.id !== id);
+      persist("agentforge-snippets", updated);
+      return { snippets: updated };
+    }),
+  togglePinSnippet: (id) =>
+    set((state) => {
+      const updated = state.snippets.map((s) =>
+        s.id === id ? { ...s, pinned: !s.pinned } : s
+      );
+      persist("agentforge-snippets", updated);
+      return { snippets: updated };
+    }),
+
+  // Agent Memory
+  memories: getStored("agentforge-memories", []),
+  addMemory: (entry) =>
+    set((state) => {
+      const updated = [entry, ...state.memories].slice(0, 100); // Max 100
+      persist("agentforge-memories", updated);
+      return { memories: updated };
+    }),
+  removeMemory: (id) =>
+    set((state) => {
+      const updated = state.memories.filter((m) => m.id !== id);
+      persist("agentforge-memories", updated);
+      return { memories: updated };
+    }),
+  clearMemories: () => {
+    persist("agentforge-memories", []);
+    set({ memories: [] });
+  },
+
+  // Reaction
+  setReaction: (messageId, reaction) =>
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m.id === messageId ? { ...m, reaction } : m
+      ),
+    })),
+
+  // Split View
+  splitView: {
+    isOpen: false,
+    leftAgent: "openmanus",
+    rightAgent: "gemini",
+    leftMessages: [],
+    rightMessages: [],
+  },
+  setSplitView: (update) =>
+    set((state) => ({
+      splitView: { ...state.splitView, ...update },
+    })),
+  addSplitMessage: (side, message) =>
+    set((state) => {
+      const key = side === "left" ? "leftMessages" : "rightMessages";
+      return {
+        splitView: {
+          ...state.splitView,
+          [key]: [...state.splitView[key], message],
+        },
+      };
+    }),
+
+  // Voice
+  isSpeaking: false,
+  setIsSpeaking: (speaking) => set({ isSpeaking: speaking }),
+
+  // Fork
+  forkFromMessage: (messageId) => {
+    const state = get();
+    const idx = state.messages.findIndex((m) => m.id === messageId);
+    if (idx < 0) return;
+    const forkId = `fork-${Date.now()}`;
+    const forkedMessages = state.messages.slice(0, idx + 1).map((m) => ({
+      ...m,
+      forkId,
+    }));
+    set({
+      messages: forkedMessages,
+      activeForkId: forkId,
+    });
+  },
+  activeForkId: null,
+  setActiveForkId: (id) => set({ activeForkId: id }),
 }));

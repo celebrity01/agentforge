@@ -3,12 +3,14 @@
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Copy, Check, Wrench, Eye, Download } from "lucide-react";
+import { Copy, Check, Wrench, Eye, Volume2, VolumeX, GitFork, Bookmark } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/types";
 import { AGENTS } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
+import { ReactionBar } from "@/components/reactions/reaction-bar";
+import { v4 as uuidv4 } from "uuid";
 import { format } from "date-fns";
 
 interface MessageBubbleProps {
@@ -18,12 +20,14 @@ interface MessageBubbleProps {
 function CodeBlock({
   language,
   children,
+  agentId,
 }: {
   language: string | undefined;
   children: string;
+  agentId: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const { openPreview } = useAppStore();
+  const { openPreview, addSnippet } = useAppStore();
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(children);
@@ -31,22 +35,29 @@ function CodeBlock({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSaveSnippet = () => {
+    addSnippet({
+      id: uuidv4(),
+      title: `${language || "code"} snippet`,
+      code: children,
+      language: language || "text",
+      agent: agentId as "openmanus" | "gemini",
+      createdAt: Date.now(),
+      pinned: false,
+    });
+  };
+
   const isPreviewable =
     ["html", "htm", "svg"].includes(language?.toLowerCase() || "") ||
     children.includes("<!DOCTYPE") ||
     children.includes("<html") ||
-    children.includes("<div") ||
-    children.includes("<body");
-
-  const isImageCode = ["python", "javascript", "js", "ts", "typescript"].includes(
-    language?.toLowerCase() || ""
-  );
+    children.includes("<div");
 
   return (
     <div className="group relative my-3 rounded-lg overflow-hidden border border-border/50">
       <div className="flex items-center justify-between bg-zinc-900 dark:bg-zinc-950 px-4 py-2 text-xs text-zinc-400">
         <span>{language || "code"}</span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           {isPreviewable && (
             <button
               onClick={() => openPreview(children, language || "html")}
@@ -55,6 +66,13 @@ function CodeBlock({
               <Eye className="size-3" /> Preview
             </button>
           )}
+          <button
+            onClick={handleSaveSnippet}
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors hover:bg-zinc-800 hover:text-violet-400"
+            title="Save to snippet library"
+          >
+            <Bookmark className="size-3" /> Save
+          </button>
           <button
             onClick={handleCopy}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors hover:bg-zinc-800 hover:text-zinc-200"
@@ -92,11 +110,37 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const agent = AGENTS.find((a) => a.id === message.agent);
   const time = format(new Date(message.timestamp), "HH:mm");
+  const { isSpeaking, setIsSpeaking, forkFromMessage } = useAppStore();
+
+  // Voice output for assistant messages
+  const handleSpeak = () => {
+    if (isSpeaking) {
+      speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    // Strip markdown for speech
+    const text = message.content
+      .replace(/```[\s\S]*?```/g, " code block ")
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/`(.*?)`/g, "$1")
+      .replace(/#{1,6}\s/g, "")
+      .replace(/>\s/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .slice(0, 2000);
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    setIsSpeaking(true);
+    speechSynthesis.speak(utterance);
+  };
 
   return (
     <div
       className={cn(
-        "flex w-full gap-3 px-4 py-3",
+        "flex w-full gap-3 px-4 py-3 group/msg",
         isUser ? "justify-end" : "justify-start"
       )}
     >
@@ -164,7 +208,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                     );
                   }
                   return (
-                    <CodeBlock language={match?.[1]}>
+                    <CodeBlock language={match?.[1]} agentId={message.agent}>
                       {String(children).replace(/\n$/, "")}
                     </CodeBlock>
                   );
@@ -187,19 +231,13 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   );
                 },
                 h1({ children }) {
-                  return (
-                    <h1 className="text-lg font-bold mb-2 mt-3">{children}</h1>
-                  );
+                  return <h1 className="text-lg font-bold mb-2 mt-3">{children}</h1>;
                 },
                 h2({ children }) {
-                  return (
-                    <h2 className="text-base font-bold mb-2 mt-3">{children}</h2>
-                  );
+                  return <h2 className="text-base font-bold mb-2 mt-3">{children}</h2>;
                 },
                 h3({ children }) {
-                  return (
-                    <h3 className="text-sm font-bold mb-1 mt-2">{children}</h3>
-                  );
+                  return <h3 className="text-sm font-bold mb-1 mt-2">{children}</h3>;
                 },
                 blockquote({ children }) {
                   return (
@@ -210,12 +248,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 },
                 a({ href, children }) {
                   return (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-emerald-500 hover:underline"
-                    >
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:underline">
                       {children}
                     </a>
                   );
@@ -226,6 +259,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             </ReactMarkdown>
           </div>
         )}
+
+        {/* Tool call badges */}
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {message.toolCalls.map((tool) => (
@@ -247,6 +282,28 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             ))}
           </div>
         )}
+
+        {/* Action bar for assistant messages */}
+        {!isUser && message.content && (
+          <div className="mt-2 flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+            <button
+              onClick={handleSpeak}
+              className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title={isSpeaking ? "Stop speaking" : "Read aloud"}
+            >
+              {isSpeaking ? <VolumeX className="size-3" /> : <Volume2 className="size-3" />}
+            </button>
+            <button
+              onClick={() => forkFromMessage(message.id)}
+              className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Fork conversation from here"
+            >
+              <GitFork className="size-3" />
+            </button>
+            <ReactionBar messageId={message.id} currentReaction={message.reaction} />
+          </div>
+        )}
+
         {isUser && (
           <span className="text-[10px] text-emerald-200/60 mt-1 block text-right">
             {time}

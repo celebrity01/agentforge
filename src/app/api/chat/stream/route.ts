@@ -6,11 +6,12 @@ import { OPENMANUS_TOOLS, executeTool, TOOL_DISPLAY } from "@/lib/tools";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages, agent, geminiApiKey, model: clientModel } = body as {
+    const { messages, agent, geminiApiKey, model: clientModel, memories } = body as {
       messages: { role: string; content: string }[];
       agent: AgentId;
       geminiApiKey?: string;
       model?: string;
+      memories?: { key: string; value: string }[];
     };
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -38,8 +39,12 @@ export async function POST(request: NextRequest) {
       ? clientModel
       : process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-    // Build the system prompt
-    const systemPrompt = getSystemPrompt(agent || "gemini");
+    // Build the system prompt (with memory if available)
+    let systemPrompt = getSystemPrompt(agent || "gemini");
+    if (memories && memories.length > 0) {
+      const memoryContext = memories.map((m) => `- ${m.key}: ${m.value}`).join("\n");
+      systemPrompt += `\n\n## User Context (Remember These)\n\nThe user has provided the following preferences and context. Respect these in all responses:\n\n${memoryContext}`;
+    }
 
     // Build initial chat messages with system prompt
     const chatMessages = [
