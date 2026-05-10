@@ -5,10 +5,11 @@ import type { AgentId } from "@/lib/types";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages, agent, geminiApiKey } = body as {
+    const { messages, agent, geminiApiKey, model: clientModel } = body as {
       messages: { role: string; content: string }[];
       agent: AgentId;
       geminiApiKey?: string;
+      model?: string;
     };
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -46,7 +47,10 @@ export async function POST(request: NextRequest) {
       })),
     ];
 
-    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-preview-05-20";
+    const VALID_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-pro"];
+    const model = clientModel && VALID_MODELS.includes(clientModel)
+      ? clientModel
+      : process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,

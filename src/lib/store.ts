@@ -108,7 +108,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Settings
   settings: {
     geminiApiKey: "",
-    model: "gemini-2.5-pro",
+    model: "gemini-2.5-flash",
     theme: "dark",
   },
   updateSettings: (newSettings) =>

@@ -25,8 +25,8 @@ import { useSyncExternalStore, useState } from "react";
 import { toast } from "sonner";
 
 const MODELS = [
-  { id: "gemini-2.5-flash-preview-05-20", name: "Gemini 2.5 Flash (Default)" },
-  { id: "gemini-2.5-pro-preview-05-06", name: "Gemini 2.5 Pro" },
+  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash (Default)" },
+  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
   { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
 ];
 

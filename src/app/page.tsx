@@ -81,6 +81,8 @@ export default function Home() {
           content: m.content,
         }));
 
+        const { settings } = useAppStore.getState();
+
         const response = await fetch("/api/chat/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -88,6 +90,7 @@ export default function Home() {
             messages: chatMessages,
             agent: currentAgent,
             geminiApiKey: geminiApiKey || undefined,
+            model: settings.model || undefined,
           }),
         });
 
