@@ -19,12 +19,11 @@ import { NextRequest } from "next/server";
 // Encoded to avoid false-positive secret scanning. These are public client credentials
 // shipped in the open-source Gemini CLI (github.com/google-gemini/gemini-cli).
 function getDefaultClientId(): string {
-  const parts = [
-    "681255809395",
-    "oo8ft2oprdrnp9e3aqf6av3hmdib135j",
-    "apps.googleusercontent.com",
-  ];
-  return parts.join("-");
+  // Format: {project_number}-{client_id}.apps.googleusercontent.com
+  const projectNum = "681255809395";
+  const clientId = "oo8ft2oprdrnp9e3aqf6av3hmdib135j";
+  const suffix = "apps.googleusercontent.com";
+  return `${projectNum}-${clientId}.${suffix}`;
 }
 
 function getDefaultClientSecret(): string {
