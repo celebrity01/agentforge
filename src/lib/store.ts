@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import type { AgentId, Message, Conversation, Settings } from "./types";
 
+interface PreviewState {
+  code: string;
+  language: string;
+  isOpen: boolean;
+}
+
 interface AppState {
   // Agent
   currentAgent: AgentId;
@@ -41,6 +47,11 @@ interface AppState {
   setGeminiApiKey: (key: string) => void;
   isGeminiConnected: boolean;
   setIsGeminiConnected: (connected: boolean) => void;
+
+  // Code Preview
+  preview: PreviewState;
+  openPreview: (code: string, language: string) => void;
+  closePreview: () => void;
 }
 
 function getStoredApiKey(): string {
@@ -132,4 +143,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   isGeminiConnected: !!getStoredApiKey(),
   setIsGeminiConnected: (connected) => set({ isGeminiConnected: connected }),
+
+  // Code Preview
+  preview: { code: "", language: "", isOpen: false },
+  openPreview: (code, language) =>
+    set({ preview: { code, language, isOpen: true } }),
+  closePreview: () =>
+    set({ preview: { code: "", language: "", isOpen: false } }),
 }));

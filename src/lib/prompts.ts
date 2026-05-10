@@ -19,6 +19,8 @@ You have the following tools available. Use them proactively whenever they can h
 
 5. **list_directory** — List files and directories in your workspace. Use this to explore project structure or find files.
 
+6. **generate_image** — Generate images from text descriptions using AI. Use this when users want visual content, illustrations, logos, diagrams, or any creative imagery.
+
 ## How to Work
 
 When given a task:

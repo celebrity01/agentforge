@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { Send, ChevronDown } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Send, ChevronDown, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -13,36 +13,108 @@ import {
 import { AGENTS, type AgentId } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { SlashCommandMenu, SLASH_COMMANDS, type SlashCommand } from "./slash-commands";
 
 interface MessageInputProps {
   onSend: (content: string) => void;
+  onSlashCommand: (command: SlashCommand, args: string) => void;
   disabled?: boolean;
 }
 
-export function MessageInput({ onSend, disabled }: MessageInputProps) {
+export function MessageInput({ onSend, onSlashCommand, disabled }: MessageInputProps) {
   const [input, setInput] = useState("");
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [slashFilter, setSlashFilter] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { currentAgent, setCurrentAgent } = useAppStore();
   const agent = AGENTS.find((a) => a.id === currentAgent);
 
+  // Check if input starts with /
+  useEffect(() => {
+    if (input.startsWith("/")) {
+      setShowSlashMenu(true);
+      setSlashFilter(input.slice(1));
+      setSelectedIndex(0);
+    } else {
+      setShowSlashMenu(false);
+    }
+  }, [input]);
+
+  const handleSlashSelect = useCallback(
+    (cmd: SlashCommand) => {
+      const args = input.slice(cmd.command.length).trim();
+      setShowSlashMenu(false);
+      setInput("");
+      onSlashCommand(cmd, args);
+    },
+    [input, onSlashCommand]
+  );
+
   const handleSubmit = useCallback(() => {
     const trimmed = input.trim();
     if (!trimmed || disabled) return;
+
+    // Check if it's a slash command
+    const slashCmd = SLASH_COMMANDS.find(
+      (c) => trimmed.startsWith(c.command) &&
+        (trimmed.length === c.command.length || trimmed[c.command.length] === " ")
+    );
+
+    if (slashCmd) {
+      const args = trimmed.slice(slashCmd.command.length).trim();
+      setInput("");
+      setShowSlashMenu(false);
+      onSlashCommand(slashCmd, args);
+      return;
+    }
+
     onSend(trimmed);
     setInput("");
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [input, disabled, onSend]);
+  }, [input, disabled, onSend, onSlashCommand]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (showSlashMenu) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setSelectedIndex((prev) => prev + 1);
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.max(0, prev - 1));
+          return;
+        }
+        if (e.key === "Tab" || e.key === "Enter") {
+          e.preventDefault();
+          // Find the filtered command at selectedIndex and trigger it
+          const filtered = SLASH_COMMANDS.filter(
+            (cmd) =>
+              (cmd.command.toLowerCase().includes(slashFilter.toLowerCase()) ||
+                cmd.label.toLowerCase().includes(slashFilter.toLowerCase())) &&
+              (cmd.agent === "both" || cmd.agent === currentAgent)
+          );
+          if (filtered[selectedIndex]) {
+            handleSlashSelect(filtered[selectedIndex]);
+          }
+          return;
+        }
+        if (e.key === "Escape") {
+          setShowSlashMenu(false);
+          return;
+        }
+      }
+
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSubmit();
       }
     },
-    [handleSubmit]
+    [handleSubmit, showSlashMenu, slashFilter, selectedIndex, currentAgent, handleSlashSelect]
   );
 
   const handleInput = useCallback(
@@ -98,12 +170,20 @@ export function MessageInput({ onSend, disabled }: MessageInputProps) {
         </DropdownMenu>
 
         <div className="flex-1 relative">
+          {showSlashMenu && (
+            <SlashCommandMenu
+              filter={slashFilter}
+              currentAgent={currentAgent}
+              onSelect={handleSlashSelect}
+              selectedIndex={selectedIndex}
+            />
+          )}
           <Textarea
             ref={textareaRef}
             value={input}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder={`Message ${agent?.name || "AI"}...`}
+            placeholder={`Message ${agent?.name || "AI"}... (type / for commands)`}
             disabled={disabled}
             rows={1}
             className="min-h-[40px] max-h-[200px] resize-none pr-12 py-2.5 text-sm rounded-xl border-border/50 focus-visible:ring-emerald-500/30"
@@ -118,9 +198,11 @@ export function MessageInput({ onSend, disabled }: MessageInputProps) {
           </Button>
         </div>
       </div>
-      <p className="text-center text-[10px] text-muted-foreground mt-1.5">
-        Press Enter to send · Shift+Enter for new line
-      </p>
+      <div className="flex items-center justify-center gap-3 mt-1.5">
+        <p className="text-[10px] text-muted-foreground">
+          Enter to send · Shift+Enter for new line · <span className="text-emerald-500">/</span> for commands
+        </p>
+      </div>
     </div>
   );
 }

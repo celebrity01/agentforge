@@ -31,10 +31,22 @@ import {
   Eye,
   EyeOff,
   ExternalLink,
+  Folder,
+  File,
+  RefreshCw,
+  Download,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { format } from "date-fns";
-import { useSyncExternalStore, useCallback, useState } from "react";
+import { useSyncExternalStore, useCallback, useState, useEffect } from "react";
+
+interface WorkspaceFile {
+  name: string;
+  type: "file" | "directory";
+  size: number;
+  modified: string;
+  path: string;
+}
 
 export function AppSidebar() {
   const {
@@ -51,6 +63,7 @@ export function AppSidebar() {
     setGeminiApiKey,
     isGeminiConnected,
     setIsGeminiConnected,
+    messages,
   } = useAppStore();
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
@@ -62,6 +75,8 @@ export function AppSidebar() {
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [tempKey, setTempKey] = useState("");
   const [showKey, setShowKey] = useState(false);
+  const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
 
   const handleNewChat = () => {
     clearMessages();
@@ -80,7 +95,6 @@ export function AppSidebar() {
   const handleConnectKey = useCallback(async () => {
     if (!tempKey.trim()) return;
 
-    // Validate the key by making a small test request
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models?key=${tempKey.trim()}`
@@ -106,11 +120,62 @@ export function AppSidebar() {
     setIsGeminiConnected(false);
   }, [setGeminiApiKey, setIsGeminiConnected]);
 
+  // Load workspace files
+  const loadWorkspace = useCallback(async () => {
+    setWorkspaceLoading(true);
+    try {
+      const res = await fetch("/api/workspace");
+      if (res.ok) {
+        const data = await res.json();
+        setWorkspaceFiles(data.files || []);
+      }
+    } catch {
+      // Ignore
+    }
+    setWorkspaceLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadWorkspace();
+  }, [loadWorkspace, messages]);
+
+  // Export chat
+  const exportChat = useCallback(() => {
+    const agentInfo = AGENTS.find((a) => a.id === currentAgent);
+    let md = `# AgentForge Chat Export\n\n`;
+    md += `**Agent:** ${agentInfo?.name || "Unknown"}\n`;
+    md += `**Date:** ${new Date().toLocaleString()}\n\n---\n\n`;
+
+    for (const msg of messages) {
+      const time = new Date(msg.timestamp).toLocaleTimeString();
+      if (msg.role === "user") {
+        md += `### You (${time})\n\n${msg.content}\n\n`;
+      } else {
+        const a = AGENTS.find((ag) => ag.id === msg.agent);
+        md += `### ${a?.name || "AI"} (${time})\n\n${msg.content}\n\n`;
+      }
+    }
+
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `agentforge-chat-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [messages, currentAgent]);
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   return (
     <Sidebar variant="sidebar" collapsible="offcanvas">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500/20 to-violet-500/20">
             <span className="text-base">⚡</span>
           </div>
           <div>
@@ -147,10 +212,6 @@ export function AppSidebar() {
                   </div>
                   <div className="size-2 rounded-full bg-emerald-500 shrink-0" />
                 </div>
-                <p className="text-[10px] text-muted-foreground px-1">
-                  Both agents use Gemini as their brain via your API key.
-                  {geminiApiKey ? " Pro subscribers get higher rate limits." : ""}
-                </p>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -245,17 +306,30 @@ export function AppSidebar() {
 
         <SidebarSeparator />
 
-        {/* New Chat Button */}
+        {/* New Chat & Export */}
         <SidebarGroup>
           <SidebarGroupContent>
-            <Button
-              onClick={handleNewChat}
-              className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-              size="sm"
-            >
-              <Plus className="size-4" />
-              New Chat
-            </Button>
+            <div className="flex gap-1.5">
+              <Button
+                onClick={handleNewChat}
+                className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                size="sm"
+              >
+                <Plus className="size-4" />
+                New Chat
+              </Button>
+              {messages.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1.5 text-xs"
+                  onClick={exportChat}
+                  title="Export chat as markdown"
+                >
+                  <Download className="size-3.5" />
+                </Button>
+              )}
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -273,6 +347,54 @@ export function AppSidebar() {
                 onSelect={handleAgentSelect}
               />
             ))}
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* Workspace Files */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs text-muted-foreground flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <Folder className="size-3" /> Workspace
+            </span>
+            <button
+              onClick={loadWorkspace}
+              className="p-0.5 rounded hover:bg-accent transition-colors"
+              title="Refresh files"
+            >
+              <RefreshCw className={`size-3 ${workspaceLoading ? "animate-spin" : ""}`} />
+            </button>
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            {workspaceFiles.length === 0 ? (
+              <p className="text-[10px] text-muted-foreground px-2 py-2">
+                No files yet. OpenManus will create files here.
+              </p>
+            ) : (
+              <div className="space-y-0.5 max-h-32 overflow-y-auto">
+                {workspaceFiles.map((file) => (
+                  <div
+                    key={file.path}
+                    className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent/50 transition-colors cursor-default"
+                  >
+                    {file.type === "directory" ? (
+                      <Folder className="size-3.5 text-amber-500 shrink-0" />
+                    ) : (
+                      <File className="size-3.5 text-muted-foreground shrink-0" />
+                    )}
+                    <span className="text-[10px] truncate flex-1 font-mono">
+                      {file.name}
+                    </span>
+                    {file.type === "file" && file.size > 0 && (
+                      <span className="text-[9px] text-muted-foreground shrink-0">
+                        {formatSize(file.size)}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
 

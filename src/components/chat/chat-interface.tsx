@@ -3,13 +3,14 @@
 import { useRef, useEffect } from "react";
 import { MessageBubble } from "./message-bubble";
 import { TypingIndicator } from "../common/typing-indicator";
+import { CodePreview } from "../preview/code-preview";
 import { useAppStore } from "@/lib/store";
 import { AGENTS } from "@/lib/types";
 import { motion } from "framer-motion";
-import { Sparkles, Zap, Key } from "lucide-react";
+import { Sparkles, Zap, Key, Search, Code, Image, Terminal, FileText } from "lucide-react";
 
 export function ChatInterface() {
-  const { messages, isLoading, currentAgent, isGeminiConnected } = useAppStore();
+  const { messages, isLoading, currentAgent, isGeminiConnected, preview, closePreview } = useAppStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const agent = AGENTS.find((a) => a.id === currentAgent);
 
@@ -19,7 +20,7 @@ export function ChatInterface() {
     }
   }, [messages, isLoading]);
 
-  if (messages.length === 0 && !isLoading) {
+  if (messages.length === 0 && !isLoading && !preview.isOpen) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center max-w-md">
@@ -27,7 +28,7 @@ export function ChatInterface() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="flex size-16 mx-auto items-center justify-center rounded-2xl bg-emerald-500/10 mb-4"
+            className="flex size-16 mx-auto items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/20 to-violet-500/20 mb-4"
           >
             <Sparkles className="size-8 text-emerald-500" />
           </motion.div>
@@ -82,34 +83,46 @@ export function ChatInterface() {
             transition={{ delay: 0.3, duration: 0.5 }}
             className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left"
           >
-            {[
-              {
-                title: "Write code",
-                desc: "Build a React component with TypeScript",
-              },
-              {
-                title: "Debug issues",
-                desc: "Help me fix this error in my Python script",
-              },
-              {
-                title: "Research topics",
-                desc: "Search for the latest AI frameworks",
-              },
-              {
-                title: "Plan projects",
-                desc: "Create a roadmap for my SaaS app",
-              },
-            ].map((suggestion) => (
-              <button
-                key={suggestion.title}
-                className="rounded-lg border border-border/50 p-3 text-left transition-colors hover:bg-accent hover:border-border"
-              >
-                <div className="text-xs font-medium">{suggestion.title}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">
-                  {suggestion.desc}
-                </div>
-              </button>
-            ))}
+            {currentAgent === "openmanus"
+              ? [
+                  { icon: <Search className="size-3.5 text-blue-500" />, title: "/search", desc: "Search the web for anything" },
+                  { icon: <Code className="size-3.5 text-emerald-500" />, title: "/code", desc: "Run Python code live" },
+                  { icon: <Image className="size-3.5 text-violet-500" />, title: "/image", desc: "Generate AI images" },
+                  { icon: <Terminal className="size-3.5 text-amber-500" />, title: "Plan & Execute", desc: "Multi-step autonomous tasks" },
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion.title}
+                    className="rounded-lg border border-border/50 p-3 text-left transition-colors hover:bg-accent hover:border-border"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {suggestion.icon}
+                      <span className="text-xs font-medium">{suggestion.title}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5 pl-5">
+                      {suggestion.desc}
+                    </div>
+                  </button>
+                ))
+              : [
+                  { icon: <Code className="size-3.5 text-emerald-500" />, title: "Write code", desc: "Build a React component" },
+                  { icon: <Terminal className="size-3.5 text-amber-500" />, title: "/debug", desc: "Find and fix bugs" },
+                  { icon: <Image className="size-3.5 text-violet-500" />, title: "/image", desc: "Generate AI images" },
+                  { icon: <FileText className="size-3.5 text-cyan-500" />, title: "/explain", desc: "Understand code clearly" },
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion.title}
+                    className="rounded-lg border border-border/50 p-3 text-left transition-colors hover:bg-accent hover:border-border"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {suggestion.icon}
+                      <span className="text-xs font-medium">{suggestion.title}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5 pl-5">
+                      {suggestion.desc}
+                    </div>
+                  </button>
+                ))
+            }
           </motion.div>
         </div>
       </div>
@@ -117,7 +130,7 @@ export function ChatInterface() {
   }
 
   return (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth">
+    <div className="flex-1 overflow-y-auto scroll-smooth">
       <div className="mx-auto max-w-3xl py-4">
         {messages.map((message, index) => (
           <motion.div
@@ -146,6 +159,17 @@ export function ChatInterface() {
           </motion.div>
         )}
       </div>
+
+      {/* Code Preview Overlay */}
+      {preview.isOpen && (
+        <div className="fixed bottom-20 right-4 z-40 w-[480px] max-w-[90vw]">
+          <CodePreview
+            code={preview.code}
+            language={preview.language}
+            onClose={closePreview}
+          />
+        </div>
+      )}
     </div>
   );
 }

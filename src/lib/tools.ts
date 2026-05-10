@@ -110,6 +110,25 @@ export const OPENMANUS_TOOLS = [
           },
         },
       },
+      {
+        name: "generate_image",
+        description:
+          "Generate an image from a text description using AI. Use this when the user wants to create visual content, illustrations, logos, or any image. Describe what you want in detail.",
+        parameters: {
+          type: "object" as const,
+          properties: {
+            prompt: {
+              type: "string" as const,
+              description: "Detailed description of the image to generate",
+            },
+            size: {
+              type: "string" as const,
+              description: "Image size: 1024x1024 (square), 1344x768 (landscape), 768x1344 (portrait)",
+            },
+          },
+          required: ["prompt"],
+        },
+      },
     ],
   },
 ];
@@ -145,6 +164,11 @@ export async function executeTool(
       case "list_directory":
         return await executeListDirectory(
           (args.path as string) || "."
+        );
+      case "generate_image":
+        return await executeGenerateImage(
+          args.prompt as string,
+          (args.size as string) || "1024x1024"
         );
       default:
         return { success: false, output: "", error: `Unknown tool: ${name}` };
@@ -356,10 +380,56 @@ async function executeListDirectory(dirPath: string): Promise<ToolResult> {
 
 // ─── Tool metadata for display ──────────────────────────────────────────────
 
+// ─── Image Generation ─────────────────────────────────────────────────────
+
+async function executeGenerateImage(
+  prompt: string,
+  size: string
+): Promise<ToolResult> {
+  try {
+    const ZAI = (await import("z-ai-web-dev-sdk")).default;
+    const zai = await ZAI.create();
+
+    const validSizes = ["1024x1024", "768x1344", "864x1152", "1344x768", "1152x864", "1440x720", "720x1440"];
+    const safeSize = validSizes.includes(size) ? size : "1024x1024";
+
+    const response = await zai.images.generations.create({
+      prompt,
+      size: safeSize,
+    });
+
+    const base64 = response.data?.[0]?.base64;
+    if (!base64) {
+      return { success: false, output: "", error: "Failed to generate image" };
+    }
+
+    // Save image to workspace
+    await fs.mkdir(WORKSPACE_DIR, { recursive: true });
+    const filename = `image_${Date.now()}.png`;
+    const filePath = path.join(WORKSPACE_DIR, filename);
+    const buffer = Buffer.from(base64, "base64");
+    await fs.writeFile(filePath, buffer);
+
+    return {
+      success: true,
+      output: `Image generated successfully. Saved as: ${filename}. The image has been created and saved to the workspace. Describe the image to the user and mention it's saved as ${filename}.`,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      output: "",
+      error: `Image generation failed: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+}
+
+// ─── Tool metadata for display ──────────────────────────────────────────────
+
 export const TOOL_DISPLAY: Record<string, { icon: string; label: string }> = {
   web_search: { icon: "🔍", label: "Searching" },
   execute_code: { icon: "💻", label: "Running code" },
   read_file: { icon: "📄", label: "Reading file" },
   write_file: { icon: "✏️", label: "Writing file" },
   list_directory: { icon: "📁", label: "Listing directory" },
+  generate_image: { icon: "🎨", label: "Generating image" },
 };

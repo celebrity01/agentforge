@@ -7,6 +7,8 @@ export interface Message {
   agent: AgentId;
   timestamp: number;
   toolCalls?: ToolCall[];
+  imageData?: string; // base64 image data for generated images
+  imagePrompt?: string;
 }
 
 export interface ToolCall {
@@ -48,13 +50,13 @@ export const AGENTS: Agent[] = [
     id: "openmanus",
     name: "OpenManus",
     description:
-      "Multi-agent autonomous task executor powered by Gemini. Plans, codes, and deploys complex workflows with tool-using capabilities.",
+      "Autonomous task executor with web search, code execution, file I/O, and image generation. Powered by Gemini.",
     capabilities: [
-      "Autonomous Task Planning",
-      "Code Generation & Execution",
-      "Web Search & Browsing",
-      "Gemini-Powered Reasoning",
-      "Multi-step Reasoning",
+      "Web Search & Research",
+      "Code Execution (Python)",
+      "File Read & Write",
+      "Image Generation",
+      "Multi-step Planning",
       "Tool Chain Orchestration",
     ],
     icon: "🔧",
@@ -66,13 +68,13 @@ export const AGENTS: Agent[] = [
     id: "gemini",
     name: "Gemini CLI",
     description:
-      "Code-focused AI assistant powered by Gemini. Terminal-native with search-grounded responses and deep code understanding.",
+      "Code-focused AI assistant with deep code understanding, debugging, and terminal expertise.",
     capabilities: [
       "Code Analysis & Generation",
-      "Search-Grounded Answers",
-      "Terminal Command Help",
+      "Image Generation",
       "Debugging & Testing",
       "Documentation Lookup",
+      "Code Improvement",
       "Multi-language Support",
     ],
     icon: "✨",
