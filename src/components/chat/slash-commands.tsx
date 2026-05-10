@@ -14,6 +14,87 @@ import {
   BookMarked,
   Zap,
   Layout,
+  Globe,
+  BarChart3,
+  Lock,
+  GitCompareArrows,
+  Braces,
+  QrCode,
+  GitBranch,
+  Type,
+  Hash,
+  Calendar,
+  Palette,
+  Link,
+  AlignLeft,
+  Regex,
+  CaseSensitive,
+  ArrowDownAZ,
+  Copy,
+  Scissors,
+  Binary,
+  Ruler,
+  Calculator,
+  ArrowLeftRight,
+  ListOrdered,
+  Reverse,
+  Repeat,
+  Minimize2,
+  FileCode2,
+  FileJson,
+  GitDiff,
+  Table,
+  Shield,
+  Hexagon,
+  Mail,
+  MessageCircle,
+  Newspaper,
+  Tag,
+  GraduationCap,
+  Scale,
+  CheckSquare,
+  ListTree,
+  Lightbulb,
+  PenTool,
+  Eye,
+  Bookmark,
+  MousePointerClick,
+  Keyboard,
+  Activity,
+  Focus,
+  Volume2,
+  Timer,
+  FolderSync,
+  Languages,
+  BrainCircuit,
+  FileSearch,
+  Workflow,
+  Database,
+  Bug,
+  Rocket,
+  Star,
+  Heart,
+  ThumbsUp,
+  Flag,
+  Package,
+  FilePlus,
+  Scan,
+  Fingerprint,
+  Cloud,
+  Megaphone,
+  Camera,
+  Clock,
+  Gauge,
+  Boxes,
+  Stethoscope,
+  Code2,
+  FileSpreadsheet,
+  Webhook,
+  CircleDot,
+  Puzzle,
+  LetterText,
+  SquareSlash,
+  CircleHelp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,9 +105,13 @@ export interface SlashCommand {
   description: string;
   icon: React.ReactNode;
   agent?: "openmanus" | "gemini" | "both";
+  category?: string;
 }
 
 export const SLASH_COMMANDS: SlashCommand[] = [
+  // ═══════════════════════════════════════════════════════════════════════
+  // ORIGINAL 13 COMMANDS
+  // ═══════════════════════════════════════════════════════════════════════
   {
     id: "search",
     command: "/search",
@@ -34,6 +119,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Search the web for current information",
     icon: <Search className="size-3.5 text-blue-500" />,
     agent: "openmanus",
+    category: "Agent Tools",
   },
   {
     id: "code",
@@ -42,6 +128,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Execute Python code",
     icon: <Code className="size-3.5 text-emerald-500" />,
     agent: "openmanus",
+    category: "Agent Tools",
   },
   {
     id: "image",
@@ -50,6 +137,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Create an image from a description",
     icon: <Image className="size-3.5 text-violet-500" />,
     agent: "both",
+    category: "Agent Tools",
   },
   {
     id: "debug",
@@ -58,6 +146,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Paste code to find and fix bugs",
     icon: <Terminal className="size-3.5 text-amber-500" />,
     agent: "gemini",
+    category: "Agent Tools",
   },
   {
     id: "explain",
@@ -66,6 +155,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Get a clear explanation of code",
     icon: <FileText className="size-3.5 text-cyan-500" />,
     agent: "gemini",
+    category: "Agent Tools",
   },
   {
     id: "improve",
@@ -74,6 +164,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Get suggestions to improve your code",
     icon: <Sparkles className="size-3.5 text-pink-500" />,
     agent: "gemini",
+    category: "Agent Tools",
   },
   {
     id: "clear",
@@ -82,6 +173,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Start a new conversation",
     icon: <Trash2 className="size-3.5 text-red-500" />,
     agent: "both",
+    category: "Chat",
   },
   {
     id: "export",
@@ -90,6 +182,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Download conversation as markdown",
     icon: <Download className="size-3.5 text-teal-500" />,
     agent: "both",
+    category: "Chat",
   },
   {
     id: "templates",
@@ -98,6 +191,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Pre-built prompts for common tasks",
     icon: <Layout className="size-3.5 text-violet-500" />,
     agent: "both",
+    category: "Chat",
   },
   {
     id: "snippets",
@@ -106,6 +200,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Browse saved code snippets",
     icon: <BookMarked className="size-3.5 text-emerald-500" />,
     agent: "both",
+    category: "Chat",
   },
   {
     id: "memory",
@@ -114,6 +209,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Manage what the agent remembers",
     icon: <Brain className="size-3.5 text-pink-500" />,
     agent: "both",
+    category: "Chat",
   },
   {
     id: "split",
@@ -122,6 +218,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Chat with both agents side by side",
     icon: <Columns className="size-3.5 text-blue-500" />,
     agent: "both",
+    category: "Chat",
   },
   {
     id: "palette",
@@ -130,8 +227,947 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Open the command palette (Cmd+K)",
     icon: <Zap className="size-3.5 text-amber-500" />,
     agent: "both",
+    category: "Chat",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // NEW OPENMANUS TOOL COMMANDS (7 new, features #1-7)
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "url",
+    command: "/url",
+    label: "Analyze Webpage",
+    description: "Fetch and analyze any webpage content",
+    icon: <Globe className="size-3.5 text-blue-500" />,
+    agent: "openmanus",
+    category: "Agent Tools",
+  },
+  {
+    id: "chart",
+    command: "/chart",
+    label: "Create Chart",
+    description: "Generate bar, line, pie, or area charts",
+    icon: <BarChart3 className="size-3.5 text-emerald-500" />,
+    agent: "openmanus",
+    category: "Agent Tools",
+  },
+  {
+    id: "translate",
+    command: "/translate",
+    label: "Translate Text",
+    description: "Translate text between 50+ languages",
+    icon: <Languages className="size-3.5 text-cyan-500" />,
+    agent: "openmanus",
+    category: "Agent Tools",
+  },
+  {
+    id: "sentiment",
+    command: "/sentiment",
+    label: "Analyze Sentiment",
+    description: "Detect emotional tone of text",
+    icon: <Heart className="size-3.5 text-pink-500" />,
+    agent: "openmanus",
+    category: "Agent Tools",
+  },
+  {
+    id: "password",
+    command: "/password",
+    label: "Generate Password",
+    description: "Create secure cryptographic passwords",
+    icon: <Lock className="size-3.5 text-amber-500" />,
+    agent: "openmanus",
+    category: "Agent Tools",
+  },
+  {
+    id: "diff",
+    command: "/diff",
+    label: "Compare Texts",
+    description: "Compare two texts and show differences",
+    icon: <GitCompareArrows className="size-3.5 text-violet-500" />,
+    agent: "openmanus",
+    category: "Agent Tools",
+  },
+  {
+    id: "json",
+    command: "/json",
+    label: "Format JSON",
+    description: "Format, validate, or minify JSON data",
+    icon: <Braces className="size-3.5 text-orange-500" />,
+    agent: "openmanus",
+    category: "Agent Tools",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // DEVELOPER UTILITY COMMANDS (features #8-30)
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "qrcode",
+    command: "/qrcode",
+    label: "Generate QR Code",
+    description: "Create a QR code from text or URL",
+    icon: <QrCode className="size-3.5 text-teal-500" />,
+    agent: "openmanus",
+    category: "Dev Utilities",
+  },
+  {
+    id: "diagram",
+    command: "/diagram",
+    label: "Create Diagram",
+    description: "Generate Mermaid diagrams (flowchart, sequence, etc.)",
+    icon: <GitBranch className="size-3.5 text-blue-500" />,
+    agent: "openmanus",
+    category: "Dev Utilities",
+  },
+  {
+    id: "stats",
+    command: "/stats",
+    label: "Text Statistics",
+    description: "Word count, reading time, readability scores",
+    icon: <Activity className="size-3.5 text-green-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "encode",
+    command: "/encode",
+    label: "Base64 Encode",
+    description: "Encode text to Base64 format",
+    icon: <Code2 className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "decode",
+    command: "/decode",
+    label: "Base64 Decode",
+    description: "Decode Base64 back to text",
+    icon: <FileCode2 className="size-3.5 text-emerald-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "hash",
+    command: "/hash",
+    label: "Hash Generator",
+    description: "Generate MD5, SHA-1, SHA-256 hashes",
+    icon: <Hash className="size-3.5 text-red-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "uuid",
+    command: "/uuid",
+    label: "Generate UUID",
+    description: "Create UUID/GUID identifiers",
+    icon: <Fingerprint className="size-3.5 text-violet-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "timestamp",
+    command: "/timestamp",
+    label: "Timestamp Converter",
+    description: "Convert between timestamps and dates",
+    icon: <Calendar className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "color",
+    command: "/color",
+    label: "Color Converter",
+    description: "Convert colors between HEX, RGB, HSL",
+    icon: <Palette className="size-3.5 text-pink-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "urlencode",
+    command: "/urlencode",
+    label: "URL Encoder",
+    description: "Encode or decode URL strings",
+    icon: <Link className="size-3.5 text-cyan-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "regex",
+    command: "/regex",
+    label: "Regex Tester",
+    description: "Test and explain regex patterns",
+    icon: <Regex className="size-3.5 text-orange-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "lorem",
+    command: "/lorem",
+    label: "Lorem Ipsum",
+    description: "Generate placeholder text",
+    icon: <AlignLeft className="size-3.5 text-gray-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "case",
+    command: "/case",
+    label: "Case Converter",
+    description: "Convert text: upper, lower, title, camel, snake, kebab",
+    icon: <CaseSensitive className="size-3.5 text-indigo-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "sort",
+    command: "/sort",
+    label: "Sort Lines",
+    description: "Sort lines alphabetically or numerically",
+    icon: <ArrowDownAZ className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "dedup",
+    command: "/dedup",
+    label: "Remove Duplicates",
+    description: "Remove duplicate lines from text",
+    icon: <Copy className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "trim",
+    command: "/trim",
+    label: "Trim Whitespace",
+    description: "Remove extra whitespace from text",
+    icon: <Scissors className="size-3.5 text-green-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "base",
+    command: "/base",
+    label: "Number Base Converter",
+    description: "Convert between binary, octal, decimal, hex",
+    icon: <Binary className="size-3.5 text-purple-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "unit",
+    command: "/unit",
+    label: "Unit Converter",
+    description: "Convert length, weight, temperature, etc.",
+    icon: <Ruler className="size-3.5 text-teal-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "count",
+    command: "/count",
+    label: "Word Counter",
+    description: "Count words, characters, lines, sentences",
+    icon: <Calculator className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "reverse",
+    command: "/reverse",
+    label: "Reverse Text",
+    description: "Reverse text or words in a string",
+    icon: <ArrowLeftRight className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "pad",
+    command: "/pad",
+    label: "Add Line Numbers",
+    description: "Add line numbers to text",
+    icon: <ListOrdered className="size-3.5 text-violet-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "minify",
+    command: "/minify",
+    label: "Minify Code",
+    description: "Minify HTML, CSS, or JavaScript",
+    icon: <Minimize2 className="size-3.5 text-red-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+  {
+    id: "beautify",
+    command: "/beautify",
+    label: "Beautify Code",
+    description: "Format and indent code nicely",
+    icon: <FileCode2 className="size-3.5 text-emerald-500" />,
+    agent: "both",
+    category: "Dev Utilities",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CIPHER & ENCODING COMMANDS (features #31-40)
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "rot13",
+    command: "/rot13",
+    label: "ROT13 Cipher",
+    description: "Encode or decode ROT13 cipher text",
+    icon: <Shield className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Ciphers",
+  },
+  {
+    id: "binary_enc",
+    command: "/binary",
+    label: "Binary Encoder",
+    description: "Convert text to binary and back",
+    icon: <Binary className="size-3.5 text-green-500" />,
+    agent: "both",
+    category: "Ciphers",
+  },
+  {
+    id: "morse",
+    command: "/morse",
+    label: "Morse Code",
+    description: "Encode/decode Morse code",
+    icon: <Zap className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "Ciphers",
+  },
+  {
+    id: "caesar",
+    command: "/caesar",
+    label: "Caesar Cipher",
+    description: "Encode/decode with Caesar cipher",
+    icon: <Lock className="size-3.5 text-red-500" />,
+    agent: "both",
+    category: "Ciphers",
+  },
+  {
+    id: "hex",
+    command: "/hex",
+    label: "Hex Encoder",
+    description: "Convert text to hexadecimal and back",
+    icon: <Hexagon className="size-3.5 text-purple-500" />,
+    agent: "both",
+    category: "Ciphers",
+  },
+  {
+    id: "escape",
+    command: "/escape",
+    label: "String Escaper",
+    description: "Escape/unescape special characters",
+    icon: <SquareSlash className="size-3.5 text-orange-500" />,
+    agent: "both",
+    category: "Ciphers",
+  },
+  {
+    id: "slug",
+    command: "/slug",
+    label: "URL Slug Generator",
+    description: "Generate URL-friendly slugs from text",
+    icon: <Link className="size-3.5 text-cyan-500" />,
+    agent: "both",
+    category: "Ciphers",
+  },
+  {
+    id: "strip",
+    command: "/strip",
+    label: "Strip HTML",
+    description: "Remove all HTML tags from text",
+    icon: <Code2 className="size-3.5 text-pink-500" />,
+    agent: "both",
+    category: "Ciphers",
+  },
+  {
+    id: "indent",
+    command: "/indent",
+    label: "Fix Indentation",
+    description: "Fix and standardize code indentation",
+    icon: <FileCode2 className="size-3.5 text-teal-500" />,
+    agent: "both",
+    category: "Ciphers",
+  },
+  {
+    id: "csv",
+    command: "/csv",
+    label: "CSV Formatter",
+    description: "Parse and format CSV data as table",
+    icon: <FileSpreadsheet className="size-3.5 text-green-500" />,
+    agent: "both",
+    category: "Ciphers",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // AI-POWERED COMMANDS (features #41-65)
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "summarize",
+    command: "/summarize",
+    label: "Summarize Chat",
+    description: "AI summarizes the entire conversation",
+    icon: <FileText className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "rewrite",
+    command: "/rewrite",
+    label: "Rewrite Text",
+    description: "AI rewrites text in a different tone",
+    icon: <PenTool className="size-3.5 text-violet-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "quiz",
+    command: "/quiz",
+    label: "Generate Quiz",
+    description: "AI creates quiz questions from content",
+    icon: <GraduationCap className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "flashcard",
+    command: "/flashcard",
+    label: "Create Flashcards",
+    description: "AI generates study flashcards from content",
+    icon: <Bookmark className="size-3.5 text-pink-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "analogy",
+    command: "/analogy",
+    label: "Explain with Analogies",
+    description: "AI explains concepts using analogies",
+    icon: <Lightbulb className="size-3.5 text-yellow-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "debate",
+    command: "/debate",
+    label: "Debate Mode",
+    description: "AI argues both sides of a topic",
+    icon: <Scale className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "factcheck",
+    command: "/factcheck",
+    label: "Fact Check",
+    description: "AI verifies claims with web research",
+    icon: <Search className="size-3.5 text-emerald-500" />,
+    agent: "openmanus",
+    category: "AI Power",
+  },
+  {
+    id: "email",
+    command: "/email",
+    label: "Draft Email",
+    description: "AI composes a professional email",
+    icon: <Mail className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "tweet",
+    command: "/tweet",
+    label: "Write Tweet",
+    description: "AI writes a tweet or thread",
+    icon: <MessageCircle className="size-3.5 text-cyan-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "headline",
+    command: "/headline",
+    label: "Generate Headlines",
+    description: "AI creates catchy headlines",
+    icon: <Newspaper className="size-3.5 text-red-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "tagline",
+    command: "/tagline",
+    label: "Create Tagline",
+    description: "AI generates brand taglines",
+    icon: <Tag className="size-3.5 text-violet-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "acronym",
+    command: "/acronym",
+    label: "Acronym Generator",
+    description: "Expand or create creative acronyms",
+    icon: <Type className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "eli5",
+    command: "/eli5",
+    label: "Explain Like I'm 5",
+    description: "AI simplifies complex concepts",
+    icon: <GraduationCap className="size-3.5 text-green-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "proscons",
+    command: "/proscons",
+    label: "Pros and Cons",
+    description: "AI lists advantages and disadvantages",
+    icon: <Scale className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "checklist",
+    command: "/checklist",
+    label: "Generate Checklist",
+    description: "AI creates a step-by-step checklist",
+    icon: <CheckSquare className="size-3.5 text-emerald-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "outline",
+    command: "/outline",
+    label: "Create Outline",
+    description: "AI generates a structured outline",
+    icon: <ListTree className="size-3.5 text-violet-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "review",
+    command: "/review",
+    label: "Code Review",
+    description: "AI reviews code for issues and improvements",
+    icon: <Stethoscope className="size-3.5 text-red-500" />,
+    agent: "gemini",
+    category: "AI Power",
+  },
+  {
+    id: "commit",
+    command: "/commit",
+    label: "Commit Message",
+    description: "AI generates git commit messages",
+    icon: <GitBranch className="size-3.5 text-orange-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "readme",
+    command: "/readme",
+    label: "Generate README",
+    description: "AI creates a project README file",
+    icon: <FilePlus className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "gitignore",
+    command: "/gitignore",
+    label: "Generate .gitignore",
+    description: "Create .gitignore for your project type",
+    icon: <Eye className="size-3.5 text-gray-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "docker",
+    command: "/docker",
+    label: "Docker Setup",
+    description: "Generate Dockerfile and docker-compose",
+    icon: <Boxes className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "api",
+    command: "/api",
+    label: "Design API",
+    description: "Design REST API endpoints and schemas",
+    icon: <Webhook className="size-3.5 text-green-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+  {
+    id: "test",
+    command: "/test",
+    label: "Generate Tests",
+    description: "AI creates unit tests for your code",
+    icon: <Bug className="size-3.5 text-amber-500" />,
+    agent: "gemini",
+    category: "AI Power",
+  },
+  {
+    id: "refactor",
+    command: "/refactor",
+    label: "Refactor Code",
+    description: "AI suggests refactoring improvements",
+    icon: <Workflow className="size-3.5 text-violet-500" />,
+    agent: "gemini",
+    category: "AI Power",
+  },
+  {
+    id: "schema",
+    command: "/schema",
+    label: "DB Schema Design",
+    description: "Design database schema from requirements",
+    icon: <Database className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "AI Power",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CREATIVE & CONTENT COMMANDS (features #66-80)
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "haiku",
+    command: "/haiku",
+    label: "Generate Haiku",
+    description: "Create a haiku poem from any topic",
+    icon: <Sparkles className="size-3.5 text-pink-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "story",
+    command: "/story",
+    label: "Story Generator",
+    description: "AI writes a short story from a prompt",
+    icon: <BookMarked className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "name",
+    command: "/name",
+    label: "Name Generator",
+    description: "Generate creative project or code names",
+    icon: <Tag className="size-3.5 text-violet-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "ascii",
+    command: "/ascii",
+    label: "ASCII Art",
+    description: "Generate ASCII art from text",
+    icon: <Type className="size-3.5 text-green-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "riddle",
+    command: "/riddle",
+    label: "Riddle Generator",
+    description: "Create and solve riddles",
+    icon: <CircleHelp className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "motivate",
+    command: "/motivate",
+    label: "Motivation Boost",
+    description: "Get an AI-powered motivational message",
+    icon: <Rocket className="size-3.5 text-red-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "joke",
+    command: "/joke",
+    label: "Tell a Joke",
+    description: "AI tells a programming joke",
+    icon: <Star className="size-3.5 text-yellow-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "mantra",
+    command: "/mantra",
+    label: "Daily Mantra",
+    description: "Generate a focus mantra for your work",
+    icon: <Sparkles className="size-3.5 text-purple-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "codename",
+    command: "/codename",
+    label: "Codename Generator",
+    description: "Generate secret agent-style codenames",
+    icon: <Shield className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "pitch",
+    command: "/pitch",
+    label: "Elevator Pitch",
+    description: "Create a compelling elevator pitch",
+    icon: <Flag className="size-3.5 text-red-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "recipe",
+    command: "/recipe",
+    label: "Code Recipe",
+    description: "Generate a code recipe for common patterns",
+    icon: <FileText className="size-3.5 text-orange-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "blog",
+    command: "/blog",
+    label: "Blog Post",
+    description: "AI writes a blog post on any topic",
+    icon: <Newspaper className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "letter",
+    command: "/letter",
+    label: "Letter Writer",
+    description: "AI composes a formal or informal letter",
+    icon: <Mail className="size-3.5 text-teal-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "slogan",
+    command: "/slogan",
+    label: "Slogan Generator",
+    description: "Generate catchy slogans for projects",
+    icon: <Megaphone className="size-3.5 text-pink-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+  {
+    id: "horoscope",
+    command: "/horoscope",
+    label: "Dev Horoscope",
+    description: "Get a fun developer horoscope reading",
+    icon: <Star className="size-3.5 text-purple-500" />,
+    agent: "both",
+    category: "Creative",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // UI & POWER USER COMMANDS (features #81-100)
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "focus",
+    command: "/focus",
+    label: "Focus Mode",
+    description: "Toggle distraction-free fullscreen mode",
+    icon: <Focus className="size-3.5 text-violet-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "pin",
+    command: "/pin",
+    label: "Pin Message",
+    description: "Pin the last AI message to top of chat",
+    icon: <Bookmark className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "searchchat",
+    command: "/searchchat",
+    label: "Search Messages",
+    description: "Search through all chat messages",
+    icon: <FileSearch className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "shortcuts",
+    command: "/shortcuts",
+    label: "Keyboard Shortcuts",
+    description: "View all available keyboard shortcuts",
+    icon: <Keyboard className="size-3.5 text-gray-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "speed",
+    command: "/speed",
+    label: "Reading Speed",
+    description: "Set AI response display speed",
+    icon: <Gauge className="size-3.5 text-green-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "voice",
+    command: "/voice",
+    label: "Voice Output",
+    description: "Toggle text-to-speech for responses",
+    icon: <Volume2 className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "timer",
+    command: "/timer",
+    label: "Pomodoro Timer",
+    description: "Start a focus timer with notifications",
+    icon: <Timer className="size-3.5 text-red-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "persona",
+    command: "/persona",
+    label: "Agent Persona",
+    description: "Customize agent personality and style",
+    icon: <BrainCircuit className="size-3.5 text-violet-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "import",
+    command: "/import",
+    label: "Import Chat",
+    description: "Import a previous chat from markdown file",
+    icon: <FolderSync className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "token",
+    command: "/token",
+    label: "Token Counter",
+    description: "Estimate token usage for the conversation",
+    icon: <Calculator className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "theme",
+    command: "/theme",
+    label: "Quick Theme",
+    description: "Cycle through color themes",
+    icon: <Palette className="size-3.5 text-pink-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "compact",
+    command: "/compact",
+    label: "Compact Mode",
+    description: "Toggle compact message display",
+    icon: <Minimize2 className="size-3.5 text-gray-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "wrap",
+    command: "/wrap",
+    label: "Word Wrap",
+    description: "Toggle code block word wrapping",
+    icon: <LetterText className="size-3.5 text-green-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "autoscroll",
+    command: "/autoscroll",
+    label: "Auto-Scroll",
+    description: "Toggle auto-scroll on new messages",
+    icon: <ArrowDownAZ className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "save",
+    command: "/save",
+    label: "Save Draft",
+    description: "Save current input as a draft message",
+    icon: <BookMarked className="size-3.5 text-emerald-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "history",
+    command: "/history",
+    label: "Command History",
+    description: "View and reuse previous commands",
+    icon: <Clock className="size-3.5 text-amber-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "batch",
+    command: "/batch",
+    label: "Batch Process",
+    description: "Run multiple queries in sequence",
+    icon: <ListOrdered className="size-3.5 text-violet-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "snapshot",
+    command: "/snapshot",
+    label: "Chat Snapshot",
+    description: "Save a snapshot of the current conversation",
+    icon: <Camera className="size-3.5 text-blue-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "plugins",
+    command: "/plugins",
+    label: "Plugin Manager",
+    description: "View and manage installed plugins",
+    icon: <Puzzle className="size-3.5 text-purple-500" />,
+    agent: "both",
+    category: "Power User",
+  },
+  {
+    id: "features",
+    command: "/features",
+    label: "Feature Hub",
+    description: "Browse all 100+ available features",
+    icon: <Sparkles className="size-3.5 text-emerald-500" />,
+    agent: "both",
+    category: "Power User",
   },
 ];
+
+// ─── Category metadata ─────────────────────────────────────────────────────
+
+export const COMMAND_CATEGORIES = [
+  { id: "Agent Tools", label: "Agent Tools", color: "text-emerald-500" },
+  { id: "Chat", label: "Chat", color: "text-blue-500" },
+  { id: "Dev Utilities", label: "Dev Utilities", color: "text-violet-500" },
+  { id: "Ciphers", label: "Ciphers & Encoding", color: "text-amber-500" },
+  { id: "AI Power", label: "AI-Powered", color: "text-pink-500" },
+  { id: "Creative", label: "Creative", color: "text-cyan-500" },
+  { id: "Power User", label: "Power User", color: "text-orange-500" },
+];
+
+// ─── Slash Command Menu Component ───────────────────────────────────────────
 
 interface SlashCommandMenuProps {
   filter: string;
@@ -150,7 +1186,8 @@ export function SlashCommandMenu({
     const matchesFilter = cmd.command
       .toLowerCase()
       .includes(filter.toLowerCase()) ||
-      cmd.label.toLowerCase().includes(filter.toLowerCase());
+      cmd.label.toLowerCase().includes(filter.toLowerCase()) ||
+      cmd.description.toLowerCase().includes(filter.toLowerCase());
     const matchesAgent =
       cmd.agent === "both" || cmd.agent === currentAgent;
     return matchesFilter && matchesAgent;
@@ -158,35 +1195,55 @@ export function SlashCommandMenu({
 
   if (filtered.length === 0) return null;
 
+  // Group by category
+  const grouped: Record<string, SlashCommand[]> = {};
+  for (const cmd of filtered) {
+    const cat = cmd.category || "Other";
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(cmd);
+  }
+
+  let globalIndex = 0;
+
   return (
-    <div className="absolute bottom-full left-0 right-0 mb-1 rounded-lg border border-border bg-card shadow-lg overflow-hidden z-50">
-      <div className="p-1.5 text-[10px] text-muted-foreground font-medium border-b border-border/50">
-        Commands
+    <div className="absolute bottom-full left-0 right-0 mb-1 max-h-[400px] overflow-y-auto rounded-lg border border-border bg-card shadow-lg z-50">
+      <div className="p-1.5 text-[10px] text-muted-foreground font-medium border-b border-border/50 sticky top-0 bg-card">
+        Commands ({filtered.length} available)
       </div>
-      {filtered.map((cmd, i) => (
-        <button
-          key={cmd.id}
-          onClick={() => onSelect(cmd)}
-          className={cn(
-            "flex items-center gap-3 w-full px-3 py-2 text-left transition-colors",
-            i === selectedIndex
-              ? "bg-accent text-accent-foreground"
-              : "hover:bg-accent/50"
-          )}
-        >
-          <div className="flex size-7 items-center justify-center rounded-md bg-muted shrink-0">
-            {cmd.icon}
+      {COMMAND_CATEGORIES.filter((cat) => grouped[cat.id]).map((cat) => (
+        <div key={cat.id}>
+          <div className={`px-3 py-1 text-[10px] font-semibold ${cat.color} bg-muted/30 sticky top-6`}>
+            {cat.label}
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium">{cmd.label}</div>
-            <div className="text-[10px] text-muted-foreground truncate">
-              {cmd.description}
-            </div>
-          </div>
-          <code className="text-[10px] text-muted-foreground font-mono shrink-0">
-            {cmd.command}
-          </code>
-        </button>
+          {grouped[cat.id].map((cmd) => {
+            const idx = globalIndex++;
+            return (
+              <button
+                key={cmd.id}
+                onClick={() => onSelect(cmd)}
+                className={cn(
+                  "flex items-center gap-3 w-full px-3 py-2 text-left transition-colors",
+                  idx === selectedIndex
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-accent/50"
+                )}
+              >
+                <div className="flex size-7 items-center justify-center rounded-md bg-muted shrink-0">
+                  {cmd.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-medium">{cmd.label}</div>
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    {cmd.description}
+                  </div>
+                </div>
+                <code className="text-[10px] text-muted-foreground font-mono shrink-0">
+                  {cmd.command}
+                </code>
+              </button>
+            );
+          })}
+        </div>
       ))}
     </div>
   );

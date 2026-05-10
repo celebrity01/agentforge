@@ -93,6 +93,64 @@ interface AppState {
   forkFromMessage: (messageId: string) => void;
   activeForkId: string | null;
   setActiveForkId: (id: string | null) => void;
+
+  // ─── NEW: 100+ Feature State ──────────────────────────────────────────
+
+  // Focus Mode (feature #81)
+  focusMode: boolean;
+  toggleFocusMode: () => void;
+
+  // Pinned Messages (feature #82)
+  pinnedMessageIds: string[];
+  pinMessage: (id: string) => void;
+  unpinMessage: (id: string) => void;
+
+  // Auto-Scroll Toggle (feature #83)
+  autoScroll: boolean;
+  setAutoScroll: (v: boolean) => void;
+
+  // Compact Mode (feature #84)
+  compactMode: boolean;
+  toggleCompactMode: () => void;
+
+  // Word Wrap for Code (feature #85)
+  wordWrap: boolean;
+  toggleWordWrap: () => void;
+
+  // Voice Auto-Read (feature #86)
+  voiceAutoRead: boolean;
+  toggleVoiceAutoRead: () => void;
+
+  // Draft Message (feature #87)
+  draftMessage: string;
+  setDraftMessage: (msg: string) => void;
+
+  // Command History (feature #88)
+  commandHistory: string[];
+  addToCommandHistory: (cmd: string) => void;
+
+  // Chat Statistics (feature #89)
+  chatStats: { totalMessages: number; totalWords: number; totalTime: number; sessionsCount: number };
+
+  // Agent Persona (feature #90)
+  agentPersona: string;
+  setAgentPersona: (persona: string) => void;
+
+  // Feature Hub (feature #91)
+  featureHubOpen: boolean;
+  setFeatureHubOpen: (open: boolean) => void;
+
+  // Search Messages (feature #92)
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+
+  // Pomodoro Timer (feature #93)
+  pomodoroState: { isRunning: boolean; mode: "work" | "break"; secondsLeft: number };
+  setPomodoroState: (update: Partial<AppState["pomodoroState"]>) => void;
+
+  // Shortcuts Panel (feature #94)
+  shortcutsOpen: boolean;
+  setShortcutsOpen: (open: boolean) => void;
 }
 
 function getStored<T>(key: string, fallback: T): T {
@@ -122,7 +180,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Messages
   messages: [],
   addMessage: (message) =>
-    set((state) => ({ messages: [...state.messages, message] })),
+    set((state) => {
+      const updated = [...state.messages, message];
+      // Update chat stats
+      const words = message.content.split(/\s+/).filter(Boolean).length;
+      return {
+        messages: updated,
+        chatStats: {
+          totalMessages: state.chatStats.totalMessages + 1,
+          totalWords: state.chatStats.totalWords + words,
+          totalTime: state.chatStats.totalTime,
+          sessionsCount: state.chatStats.sessionsCount,
+        },
+      };
+    }),
   updateMessage: (id, updates) =>
     set((state) => ({
       messages: state.messages.map((m) =>
@@ -220,7 +291,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   memories: getStored("agentforge-memories", []),
   addMemory: (entry) =>
     set((state) => {
-      const updated = [entry, ...state.memories].slice(0, 100); // Max 100
+      const updated = [entry, ...state.memories].slice(0, 100);
       persist("agentforge-memories", updated);
       return { memories: updated };
     }),
@@ -287,4 +358,81 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   activeForkId: null,
   setActiveForkId: (id) => set({ activeForkId: id }),
+
+  // ─── NEW: 100+ Feature State Implementations ──────────────────────────
+
+  // Focus Mode
+  focusMode: false,
+  toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
+
+  // Pinned Messages
+  pinnedMessageIds: getStored("agentforge-pinned", []),
+  pinMessage: (id) =>
+    set((s) => {
+      const updated = s.pinnedMessageIds.includes(id) ? s.pinnedMessageIds : [...s.pinnedMessageIds, id];
+      persist("agentforge-pinned", updated);
+      return { pinnedMessageIds: updated };
+    }),
+  unpinMessage: (id) =>
+    set((s) => {
+      const updated = s.pinnedMessageIds.filter((pid) => pid !== id);
+      persist("agentforge-pinned", updated);
+      return { pinnedMessageIds: updated };
+    }),
+
+  // Auto-Scroll
+  autoScroll: true,
+  setAutoScroll: (v) => set({ autoScroll: v }),
+
+  // Compact Mode
+  compactMode: false,
+  toggleCompactMode: () => set((s) => ({ compactMode: !s.compactMode })),
+
+  // Word Wrap
+  wordWrap: false,
+  toggleWordWrap: () => set((s) => ({ wordWrap: !s.wordWrap })),
+
+  // Voice Auto-Read
+  voiceAutoRead: false,
+  toggleVoiceAutoRead: () => set((s) => ({ voiceAutoRead: !s.voiceAutoRead })),
+
+  // Draft Message
+  draftMessage: "",
+  setDraftMessage: (msg) => set({ draftMessage: msg }),
+
+  // Command History
+  commandHistory: getStored("agentforge-cmd-history", []),
+  addToCommandHistory: (cmd) =>
+    set((s) => {
+      const updated = [cmd, ...s.commandHistory.filter((c) => c !== cmd)].slice(0, 50);
+      persist("agentforge-cmd-history", updated);
+      return { commandHistory: updated };
+    }),
+
+  // Chat Statistics
+  chatStats: getStored("agentforge-stats", { totalMessages: 0, totalWords: 0, totalTime: 0, sessionsCount: 0 }),
+
+  // Agent Persona
+  agentPersona: getStored("agentforge-persona", ""),
+  setAgentPersona: (persona) => {
+    persist("agentforge-persona", persona);
+    set({ agentPersona: persona });
+  },
+
+  // Feature Hub
+  featureHubOpen: false,
+  setFeatureHubOpen: (open) => set({ featureHubOpen: open }),
+
+  // Search Messages
+  searchQuery: "",
+  setSearchQuery: (q) => set({ searchQuery: q }),
+
+  // Pomodoro Timer
+  pomodoroState: { isRunning: false, mode: "work" as const, secondsLeft: 25 * 60 },
+  setPomodoroState: (update) =>
+    set((s) => ({ pomodoroState: { ...s.pomodoroState, ...update } })),
+
+  // Shortcuts Panel
+  shortcutsOpen: false,
+  setShortcutsOpen: (open) => set({ shortcutsOpen: open }),
 }));
